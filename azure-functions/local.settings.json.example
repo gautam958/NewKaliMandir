@@ -1,0 +1,12 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet",
+    "GOOGLE_CLIENT_ID": "your-oauth-client-id.apps.googleusercontent.com",
+    "ADMIN_EMAILS": "priest@example.com,secretary@example.com",
+    "ALLOWED_ORIGIN": "https://your-github-username.github.io",
+    "MEDIA_CONTAINER": "media",
+    "CONTENT_CONTAINER": "content"
+  }
+}
