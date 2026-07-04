@@ -79,6 +79,42 @@
     setTimeout(() => el.classList.remove("show"), 1800);
   }
 
+  /* ---------------- Theme switcher ---------------- */
+  const THEMES = ["dark", "dusk", "marigold", "sandstone"];
+  function initTheme() {
+    const html = document.documentElement;
+    const saved = localStorage.getItem("km_theme");
+    const theme = THEMES.includes(saved) ? saved : "dark";
+    html.setAttribute("data-theme", theme);
+
+    const switchEl = document.getElementById("themeSwitch");
+    if (!switchEl) return;
+    const btn = document.getElementById("themeBtn");
+    const options = switchEl.querySelectorAll(".theme-option");
+
+    function setActive(t) {
+      options.forEach((o) => o.classList.toggle("active", o.dataset.themeOpt === t));
+    }
+    setActive(theme);
+
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      switchEl.classList.toggle("open");
+    });
+    options.forEach((opt) => {
+      opt.addEventListener("click", () => {
+        const t = opt.dataset.themeOpt;
+        html.setAttribute("data-theme", t);
+        localStorage.setItem("km_theme", t);
+        setActive(t);
+        switchEl.classList.remove("open");
+      });
+    });
+    document.addEventListener("click", (e) => {
+      if (!switchEl.contains(e.target)) switchEl.classList.remove("open");
+    });
+  }
+
   /* ---------------- Auth ---------------- */
   function decodeJwt(token) {
     try {
@@ -441,6 +477,7 @@
 
   /* ---------------- Boot ---------------- */
   document.addEventListener("DOMContentLoaded", async () => {
+    initTheme();
     content = await loadContent();
     initTabs();
     document.getElementById("signOutBtn").addEventListener("click", signOut);

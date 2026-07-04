@@ -58,7 +58,21 @@ style or business logic (see `code-reviewer.md` for that).
    control or that adds a new admin action without a matching server-side
    verification call.
 
-## What to do when you find a violation
+7. **Every color is a CSS variable — no exceptions.**
+   `styles.css` defines four selectable themes (`html[data-theme="dark|dusk|marigold|sandstone"]`)
+   purely through `:root`/`html[data-theme=...]` custom-property blocks. A
+   hardcoded hex or `rgb()`/`rgba()` value anywhere else in the stylesheet
+   will look right in whichever theme you happened to test and silently
+   break in the other three — there is no visual diff to catch this later,
+   since each theme only gets checked when someone actively switches to it.
+   Overlays/scrims that need partial opacity must use the `-rgb` triplet
+   tokens (`--bg-rgb`, `--gold-rgb`, `--gold-bright-rgb`) via
+   `rgba(var(--x-rgb), alpha)`, not a literal color. When adding a new
+   themed surface, add the matching value to all four theme blocks in the
+   same edit, not just the one you're looking at — search for the property
+   name across all four blocks before considering the change done.
+
+
 
 State which rule is broken, point at the specific file/line, and propose
 the minimal restructuring that satisfies the rule — don't rewrite unrelated
