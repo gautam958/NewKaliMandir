@@ -27,32 +27,74 @@
     { "date_en": "Oct – Nov", "date_hi": "अक्टूबर – नवंबर", "title_en": "Kali Puja & Deepavali", "title_hi": "काली पूजा एवं दीपावली", "desc_en": "The temple's principal night of worship, on Amavasya.", "desc_hi": "अमावस्या की रात्रि, मंदिर का प्रमुख पूजा पर्व।" },
     { "date_en": "Jan", "date_hi": "जनवरी", "title_en": "Poush Sankranti Puja", "title_hi": "पौष संक्रांति पूजा", "desc_en": "New harvest offering to Ma Kali.", "desc_hi": "माँ काली को नई फसल का अर्पण।" }
   ],
-  "samagri": [
-    { "en": "Red hibiscus (jaba) flowers", "hi": "लाल जवा पुष्प" },
-    { "en": "Sindoor (vermillion)", "hi": "सिंदूर" },
-    { "en": "Red cloth (chunri)", "hi": "लाल चुनरी" },
-    { "en": "Mustard oil & cotton wick", "hi": "सरसों तेल व बत्ती" },
-    { "en": "Diya (oil lamp)", "hi": "दीया" },
-    { "en": "Incense sticks (dhoop/agarbatti)", "hi": "धूप / अगरबत्ती" },
-    { "en": "Camphor (kapoor)", "hi": "कपूर" },
-    { "en": "Coconut", "hi": "नारियल" },
-    { "en": "Betel leaves & areca nut", "hi": "पान का पत्ता व सुपारी" },
-    { "en": "Seasonal fruits", "hi": "मौसमी फल" },
-    { "en": "Sweets (mishti / prasad)", "hi": "मिठाई / प्रसाद" },
-    { "en": "Raw rice (akshat)", "hi": "अक्षत (कच्चा चावल)" },
-    { "en": "Turmeric powder", "hi": "हल्दी पाउडर" },
-    { "en": "Garland (mala)", "hi": "माला" }
+  "samagriLists": [
+    {
+      "id": "daily",
+      "title_en": "Daily Puja Samagri",
+      "title_hi": "नित्य पूजा सामग्री",
+      "items": [
+        { "en": "Red hibiscus (jaba) flowers", "hi": "लाल जवा पुष्प", "qty": "5–7 pieces" },
+        { "en": "Sindoor (vermillion)", "hi": "सिंदूर", "qty": "1 small packet" },
+        { "en": "Mustard oil", "hi": "सरसों तेल", "qty": "100 ml" },
+        { "en": "Cotton wick (batti)", "hi": "बत्ती", "qty": "4–5 pieces" },
+        { "en": "Incense sticks (agarbatti)", "hi": "अगरबत्ती", "qty": "1 packet" },
+        { "en": "Camphor (kapoor)", "hi": "कपूर", "qty": "1 small packet" },
+        { "en": "Betel leaves", "hi": "पान के पत्ते", "qty": "5 pieces" },
+        { "en": "Seasonal fruit", "hi": "मौसमी फल", "qty": "1–2 pieces" }
+      ]
+    },
+    {
+      "id": "kali-puja",
+      "title_en": "Kali Puja Special Samagri",
+      "title_hi": "काली पूजा विशेष सामग्री",
+      "items": [
+        { "en": "Red hibiscus garland", "hi": "लाल जवा माला", "qty": "2 garlands" },
+        { "en": "Red cloth (chunri)", "hi": "लाल चुनरी", "qty": "1 piece" },
+        { "en": "Coconut", "hi": "नारियल", "qty": "2 pieces" },
+        { "en": "Sweets (mishti/prasad)", "hi": "मिठाई / प्रसाद", "qty": "500 g" },
+        { "en": "Raw rice (akshat)", "hi": "अक्षत (कच्चा चावल)", "qty": "250 g" },
+        { "en": "Turmeric powder", "hi": "हल्दी पाउडर", "qty": "50 g" },
+        { "en": "Oil lamps (diya)", "hi": "दीये", "qty": "5 pieces" },
+        { "en": "Black sesame seeds (til)", "hi": "काला तिल", "qty": "100 g" }
+      ]
+    },
+    {
+      "id": "navratri",
+      "title_en": "Navratri / Durga Puja Samagri",
+      "title_hi": "नवरात्रि / दुर्गा पूजा सामग्री",
+      "items": [
+        { "en": "Mixed flowers (red & yellow)", "hi": "मिश्रित फूल (लाल व पीला)", "qty": "as needed" },
+        { "en": "Kalash (copper pot)", "hi": "कलश", "qty": "1 piece" },
+        { "en": "Mango leaves", "hi": "आम के पत्ते", "qty": "5 pieces" },
+        { "en": "Coconut", "hi": "नारियल", "qty": "1 piece" },
+        { "en": "Red cloth (chunri)", "hi": "लाल चुनरी", "qty": "1 piece" },
+        { "en": "Barley/wheat seeds (for jawara)", "hi": "जौ / गेहूं के बीज", "qty": "250 g" },
+        { "en": "Durva grass", "hi": "दूर्वा घास", "qty": "1 bunch" },
+        { "en": "Assorted fruits", "hi": "विभिन्न फल", "qty": "5 varieties" }
+      ]
+    }
   ],
   "hours": {
-    "open": "8:00 AM",
-    "close": "4:00 PM",
-    "notice_en": "No special timing changes at present. Updates from the temple committee will appear here.",
-    "notice_hi": "फिलहाल कोई विशेष समय परिवर्तन नहीं है। मंदिर समिति की सूचनाएं यहाँ दिखाई देंगी।"
+    "standard": { "open": "8:00 AM", "close": "4:00 PM" },
+    "special": {
+      "days_en": "Saturday & Tuesday",
+      "days_hi": "शनिवार व मंगलवार",
+      "open": "10:00 AM",
+      "close": "4:00 PM",
+      "note_en": "Special puja days — larger numbers of devotees are expected.",
+      "note_hi": "विशेष पूजा दिवस — अधिक भक्तों के आगमन की संभावना।"
+    },
+    "notice_en": "No further timing changes at present. Festival-specific updates from the temple committee will appear here.",
+    "notice_hi": "फिलहाल कोई अन्य समय परिवर्तन नहीं है। पर्व-विशेष सूचनाएं यहाँ दिखाई देंगी।"
   },
   "contact": {
     "address": "N.M Road, Belabagan, Deoghar, Jharkhand, India – 814112",
     "mobile": "+91-9431777784"
   },
+  "custodians": [
+    { "name": "Name Not Yet Added", "role_en": "Temple Priest", "role_hi": "मंदिर पुजारी", "photo": null },
+    { "name": "Name Not Yet Added", "role_en": "Trustee", "role_hi": "न्यासी", "photo": null }
+  ],
   "bank_details": "Details available on request — call +91-9431777784",
   "qr_image": null
 }

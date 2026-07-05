@@ -34,6 +34,7 @@
   <div id="googleSignInBtn"></div>
   <div id="authError" class="hint" style="color:#e08a8a; display:none;"></div>
   <button class="demo-link" id="demoModeBtn" type="button">Continue in demo mode (preview only, no real sign-in)</button>
+  <a href="index.html" class="back-to-site">&#8592; Back to Site</a>
 </div>
 
 <!-- ============ ADMIN APP ============ -->
@@ -41,6 +42,7 @@
   <div class="admin-topbar">
     <div class="brand">
       <span class="title-en display" style="font-size:1.05rem;">Kali Mandir · Admin</span>
+      <a href="index.html" class="back-to-site">&#8592; Back to Site</a>
     </div>
     <div class="admin-user">
       <div class="theme-switch" id="themeSwitch">
@@ -76,15 +78,31 @@
     <section class="admin-panel active" data-panel="hours">
       <div class="admin-card">
         <h3>Standard Visiting Hours</h3>
-        <p class="hint">Applies every day unless a festival notice below says otherwise.</p>
+        <p class="hint">Applies on all days except the special puja days below.</p>
         <div class="field-row">
           <div class="field"><label for="hoursOpen">Opens</label><input type="text" id="hoursOpen" placeholder="8:00 AM"></div>
           <div class="field"><label for="hoursClose">Closes</label><input type="text" id="hoursClose" placeholder="4:00 PM"></div>
         </div>
       </div>
       <div class="admin-card">
+        <h3>Special Puja Days</h3>
+        <p class="hint">A separate, highlighted schedule for the days with the biggest puja turnout (e.g. Saturday &amp; Tuesday).</p>
+        <div class="field-row">
+          <div class="field"><label>Days — English</label><input type="text" id="specialDaysEn" placeholder="Saturday &amp; Tuesday"></div>
+          <div class="field"><label>Days — Hindi</label><input type="text" id="specialDaysHi" placeholder="शनिवार व मंगलवार"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="specialOpen">Opens</label><input type="text" id="specialOpen" placeholder="10:00 AM"></div>
+          <div class="field"><label for="specialClose">Closes</label><input type="text" id="specialClose" placeholder="4:00 PM"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Highlight note — English</label><input type="text" id="specialNoteEn" placeholder="Special puja days — larger numbers of devotees are expected."></div>
+          <div class="field"><label>Highlight note — Hindi</label><input type="text" id="specialNoteHi" placeholder="विशेष पूजा दिवस — अधिक भक्तों के आगमन की संभावना।"></div>
+        </div>
+      </div>
+      <div class="admin-card">
         <h3>Festival Timing Notice</h3>
-        <p class="hint">Shown as a highlighted note under the hours. Use it to flag special darshan timings.</p>
+        <p class="hint">Shown as a highlighted note under the hours cards. Use it to flag one-off timing changes.</p>
         <div class="field-row">
           <div class="field"><label>Notice — English</label><textarea id="noticeEn"></textarea></div>
           <div class="field"><label>Notice — Hindi</label><textarea id="noticeHi"></textarea></div>
@@ -130,12 +148,12 @@
     <!-- SAMAGRI -->
     <section class="admin-panel" data-panel="samagri">
       <div class="admin-card">
-        <h3>Puja Samagri Checklist</h3>
-        <p class="hint">The ritual-items list devotees see under "Puja Samagri List".</p>
-        <div id="samagriItems"></div>
-        <button class="btn-add" id="addSamagriItem" type="button">+ Add item</button>
+        <h3>Puja Samagri Lists</h3>
+        <p class="hint">Manage as many separate lists as you need (Daily, Kali Puja Special, Navratri, etc.) — each becomes its own collapsible, downloadable, printable table on the site.</p>
+        <div id="samagriListsEditor"></div>
+        <button class="btn-add" id="addSamagriList" type="button">+ Add a new list</button>
       </div>
-      <div class="save-bar"><button class="btn-save" data-save="samagri">Save List</button><span class="save-status" data-status="samagri">Saved ✓</span></div>
+      <div class="save-bar"><button class="btn-save" data-save="samagri">Save All Lists</button><span class="save-status" data-status="samagri">Saved ✓</span></div>
     </section>
 
     <!-- DONATIONS / CONTACT -->
@@ -146,6 +164,11 @@
           <div class="field"><label>Address</label><input type="text" id="contactAddress"></div>
           <div class="field"><label>Mobile</label><input type="text" id="contactMobile"></div>
         </div>
+      </div>
+      <div class="admin-card">
+        <h3>Temple Committee</h3>
+        <p class="hint">Shown in the Contact Us section on the public site, with photos.</p>
+        <div class="custodian-editor-grid" id="custodiansEditor"></div>
       </div>
       <div class="admin-card">
         <h3>Donations</h3>

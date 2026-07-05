@@ -400,6 +400,12 @@ img { max-width: 100%; display: block; }
 .hours-card .time { font-family: var(--font-display-en); font-size: 2.1rem; color: var(--gold-bright); margin-top: 6px; }
 html[data-lang="hi"] .hours-card .time { font-family: var(--font-display-hi); }
 .hours-card .note { margin-top: 10px; font-size: 0.85rem; color: var(--muted); }
+.hours-card.special { border-color: var(--sindoor); background: linear-gradient(135deg, var(--surface), var(--surface-2)); position: relative; }
+.hours-card .badge {
+  display: inline-block; background: var(--sindoor); color: var(--on-accent);
+  font-size: 0.66rem; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.05em;
+  margin-top: 10px; text-transform: uppercase; font-weight: 600;
+}
 
 /* ---------- Gallery ---------- */
 .gallery-grid {
@@ -411,8 +417,10 @@ html[data-lang="hi"] .hours-card .time { font-family: var(--font-display-hi); }
   background: linear-gradient(135deg, var(--surface), var(--surface-2));
   color: var(--muted); font-size: 0.75rem; text-align: center; padding: 10px;
   background-size: cover; background-position: center;
-  position: relative;
+  position: relative; cursor: pointer;
+  transition: transform .2s ease;
 }
+.gallery-grid .g-item:hover { transform: scale(1.02); }
 .gallery-grid .g-item .cap {
   background: rgba(var(--bg-rgb), 0.72);
   color: var(--gold-bright);
@@ -437,18 +445,35 @@ html[data-lang="hi"] .hours-card .time { font-family: var(--font-display-hi); }
 html[data-lang="hi"] .timeline .t-title { font-family: var(--font-display-hi); }
 .timeline .t-desc { color: var(--muted); font-size: 0.92rem; margin-top: 4px; }
 
-/* ---------- Samagri checklist ---------- */
-.samagri-list { columns: 2; column-gap: 40px; list-style: none; padding: 0; margin: 0; }
-@media (max-width: 640px) { .samagri-list { columns: 1; } }
-.samagri-list li {
-  display: flex; align-items: center; gap: 12px; padding: 10px 0;
-  border-bottom: 1px dashed var(--line);
-  break-inside: avoid;
+/* ---------- Samagri lists (collapsible, tabular) ---------- */
+.samagri-lists { display: flex; flex-direction: column; gap: 16px; }
+.samagri-card { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); overflow: hidden; }
+.samagri-card summary {
+  cursor: pointer; padding: 20px 24px; list-style: none;
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  font-family: var(--font-display-en); font-size: 1.25rem; color: var(--ivory);
 }
-.samagri-list input[type="checkbox"] {
-  width: 17px; height: 17px; accent-color: var(--sindoor); flex-shrink: 0;
+html[data-lang="hi"] .samagri-card summary { font-family: var(--font-display-hi); }
+.samagri-card summary::-webkit-details-marker { display: none; }
+.samagri-card summary::marker { content: ""; }
+.samagri-card summary .s-left { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.samagri-card summary .count { font-family: var(--font-body); font-size: 0.78rem; color: var(--muted); font-weight: 400; }
+.samagri-card summary .chev { transition: transform .2s ease; color: var(--gold); flex-shrink: 0; font-size: 0.85rem; }
+.samagri-card[open] summary .chev { transform: rotate(90deg); }
+.samagri-card .toolbar { display: flex; gap: 10px; padding: 0 24px 16px; flex-wrap: wrap; }
+.samagri-card .toolbar button {
+  display: inline-flex; align-items: center; gap: 6px; background: none; border: 1px solid var(--line); color: var(--gold-bright);
+  padding: 7px 14px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; font-family: var(--font-body);
 }
-.samagri-list label.checked { color: var(--muted); text-decoration: line-through; }
+.samagri-card .toolbar button:hover { border-color: var(--gold); background: rgba(var(--gold-rgb), 0.08); }
+.samagri-table-wrap { padding: 0 24px 24px; overflow-x: auto; }
+table.samagri-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+table.samagri-table th { text-align: left; color: var(--gold); font-size: 0.72rem; letter-spacing: 0.05em; text-transform: uppercase; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+table.samagri-table td { padding: 10px; border-bottom: 1px dashed var(--line); color: var(--ivory); vertical-align: middle; }
+table.samagri-table td.qty-col { color: var(--muted); white-space: nowrap; }
+table.samagri-table td.check-col { width: 30px; }
+table.samagri-table input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--sindoor); }
+table.samagri-table tr.checked td { color: var(--muted); text-decoration: line-through; }
 
 /* ---------- Contact ---------- */
 .contact-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 40px; }
@@ -484,6 +509,58 @@ footer.site-footer a.admin-link { color: var(--gold); }
 .fade-in { opacity: 0; transform: translateY(14px); transition: opacity .6s ease, transform .6s ease; }
 .fade-in.in-view { opacity: 1; transform: translateY(0); }
 
+/* ---------- Lightbox (gallery photo popup) ---------- */
+.lightbox {
+  position: fixed; inset: 0; z-index: 200; display: none;
+  align-items: center; justify-content: center;
+  background: rgba(var(--bg-rgb), 0.94); backdrop-filter: blur(4px);
+  padding: 40px;
+}
+.lightbox.open { display: flex; }
+.lightbox img { max-width: min(90vw, 1000px); max-height: 80vh; border-radius: 6px; box-shadow: 0 20px 60px rgba(var(--bg-rgb), 0.6); }
+.lightbox-close {
+  position: absolute; top: 18px; right: 22px; background: none; border: none;
+  color: var(--ivory); font-size: 2.2rem; line-height: 1; cursor: pointer;
+}
+.lightbox-nav {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  background: rgba(var(--bg-rgb), 0.5); border: 1px solid var(--line); color: var(--ivory);
+  width: 44px; height: 44px; border-radius: 50%; cursor: pointer; font-size: 1.1rem;
+  display: flex; align-items: center; justify-content: center;
+}
+.lightbox-nav:hover { border-color: var(--gold); color: var(--gold-bright); }
+.lightbox-prev { left: 20px; }
+.lightbox-next { right: 20px; }
+.lightbox-cap {
+  position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%);
+  color: var(--gold-bright); background: rgba(var(--bg-rgb), 0.6); padding: 6px 18px;
+  border-radius: 20px; font-size: 0.85rem; white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .lightbox { padding: 14px; }
+  .lightbox-nav { width: 38px; height: 38px; }
+  .lightbox-prev { left: 8px; }
+  .lightbox-next { right: 8px; }
+}
+
+/* ---------- Custodians (temple committee, in Contact Us) ---------- */
+.custodians-head { margin-top: 40px; margin-bottom: 16px; }
+.custodians-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap: 18px; }
+.custodian-card {
+  border: 1px solid var(--line); background: var(--surface); border-radius: 8px;
+  padding: 22px; display: flex; align-items: center; gap: 16px;
+}
+.custodian-card .photo, .custodian-card .photo-placeholder {
+  width: 72px; height: 72px; border-radius: 50%; flex-shrink: 0; background: var(--bg-alt);
+}
+.custodian-card .photo { object-fit: cover; border: 2px solid var(--gold); }
+.custodian-card .photo-placeholder {
+  border: 2px solid var(--line); display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 1.6rem;
+}
+.custodian-card .name { font-family: var(--font-display-en); font-size: 1.15rem; color: var(--ivory); }
+html[data-lang="hi"] .custodian-card .name { font-family: var(--font-display-hi); }
+.custodian-card .role { font-size: 0.82rem; color: var(--gold); margin-top: 3px; letter-spacing: 0.03em; }
+
 /* ============================================================
    Admin panel (admin.html / admin.js only)
    ============================================================ */
@@ -501,6 +578,9 @@ body.admin-body { overflow-x: hidden; }
 #googleSignInBtn { min-height: 42px; }
 .demo-link { font-size: 0.82rem; color: var(--muted); text-decoration: underline; cursor: pointer; background: none; border: none; }
 .demo-link:hover { color: var(--gold-bright); }
+.back-to-site { font-size: 0.8rem; color: var(--muted); border: 1px solid var(--line); border-radius: 20px; padding: 6px 14px; transition: all .2s ease; }
+.back-to-site:hover { color: var(--gold-bright); border-color: var(--gold); }
+.admin-topbar .brand { display: flex; align-items: center; gap: 14px; }
 
 .admin-topbar {
   position: sticky; top: 0; z-index: 30; display: flex; align-items: center; justify-content: space-between;
@@ -574,3 +654,27 @@ body.admin-body { overflow-x: hidden; }
 
 .backend-note { border-left: 2px solid var(--gold); padding: 12px 16px; background: rgba(var(--gold-rgb), 0.06); font-size: 0.82rem; color: var(--muted); border-radius: 0 4px 4px 0; margin-bottom: 20px; }
 .backend-note strong { color: var(--gold-bright); }
+
+/* Nested samagri-list editor: a list-of-lists, each with its own item rows */
+.list-editor-card { border: 1px solid var(--line); border-radius: 8px; padding: 20px; margin-bottom: 18px; background: var(--bg-alt); }
+.list-editor-card .list-editor-head { display: flex; gap: 12px; align-items: flex-end; margin-bottom: 16px; }
+.list-editor-card .list-editor-head .field { flex: 1; }
+.list-editor-card .remove-list-btn {
+  background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 4px;
+  padding: 9px 14px; cursor: pointer; font-size: 0.8rem; flex-shrink: 0; height: fit-content;
+}
+.list-editor-card .remove-list-btn:hover { color: var(--sindoor); border-color: var(--sindoor); }
+.item-row { display: grid; grid-template-columns: 1fr 1fr 110px 32px; gap: 8px; margin-bottom: 8px; align-items: center; }
+@media (max-width: 720px) { .item-row { grid-template-columns: 1fr; } }
+.item-row input { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; color: var(--ivory); padding: 8px 10px; font-family: var(--font-body); font-size: 0.86rem; width: 100%; }
+.item-row .remove-item-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1rem; }
+.item-row .remove-item-btn:hover { color: var(--sindoor); }
+.item-row.header-row { color: var(--gold); font-size: 0.7rem; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 4px; }
+.btn-add-item { border: 1px dashed var(--line); background: none; color: var(--gold-bright); border-radius: 4px; padding: 8px 14px; cursor: pointer; font-family: var(--font-body); font-size: 0.82rem; margin-top: 4px; }
+.btn-add-item:hover { border-color: var(--gold); }
+
+/* Custodian (temple committee) editor: two fixed person cards */
+.custodian-editor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 720px) { .custodian-editor-grid { grid-template-columns: 1fr; } }
+.custodian-editor-card { border: 1px solid var(--line); border-radius: 8px; padding: 18px; background: var(--bg-alt); }
+.custodian-editor-card .upload-grid { grid-template-columns: 90px; margin-bottom: 12px; }

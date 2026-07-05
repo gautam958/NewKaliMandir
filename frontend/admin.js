@@ -17,9 +17,13 @@
   const API_BASE = window.KALI_MANDIR_API_BASE || null;
 
   const EMERGENCY_FALLBACK = {
-    hours: { open: "8:00 AM", close: "4:00 PM", notice_en: "", notice_hi: "" },
+    hours: {
+      standard: { open: "8:00 AM", close: "4:00 PM" },
+      special: { days_en: "Saturday & Tuesday", days_hi: "शनिवार व मंगलवार", open: "10:00 AM", close: "4:00 PM", note_en: "", note_hi: "" },
+      notice_en: "", notice_hi: ""
+    },
     contact: { address: "N.M Road, Belabagan, Deoghar, Jharkhand, India – 814112", mobile: "+91-9431777784" },
-    slides: [], gallery: [], schedule: [], samagri: [], bank_details: "", qr_image: null
+    slides: [], gallery: [], schedule: [], samagriLists: [], custodians: [], bank_details: "", qr_image: null
   };
 
   // Mutable working copies, edited by the form UI and written out on Save.
@@ -53,6 +57,28 @@
       if (local) base = { ...base, ...local };
     } catch (err) { /* ignore */ }
     return base;
+  }
+
+  /* Uploads a data-URL image to the Media function when the backend is
+     configured and the session is a real (non-demo) sign-in, returning a
+     real hosted URL. Falls back to the data URL itself for local preview
+     (no backend yet, or demo mode) so the admin panel still works fully
+     offline — this is the same fallback-first pattern used everywhere else. */
+  async function uploadImage(dataUrl, filename, contentType) {
+    if (!API_BASE || !currentUser || !currentUser.idToken) return dataUrl;
+    try {
+      const res = await fetch(`${API_BASE}/media`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${currentUser.idToken}` },
+        body: JSON.stringify({ filename, contentType, dataBase64: dataUrl })
+      });
+      if (!res.ok) throw new Error("upload failed");
+      const data = await res.json();
+      return data.url || dataUrl;
+    } catch (err) {
+      console.warn("Media upload failed, falling back to inline image for local preview.", err);
+      return dataUrl;
+    }
   }
 
   async function persist(partial) {
@@ -210,17 +236,36 @@
     });
   }
 
-  /* ---------------- Hours panel ---------------- */
+  /* ---------------- Hours panel (standard + special Sat/Tue) ---------------- */
   function fillHours() {
-    document.getElementById("hoursOpen").value = content.hours?.open || "";
-    document.getElementById("hoursClose").value = content.hours?.close || "";
-    document.getElementById("noticeEn").value = content.hours?.notice_en || "";
-    document.getElementById("noticeHi").value = content.hours?.notice_hi || "";
+    const h = content.hours || {};
+    const std = h.standard || {};
+    const spec = h.special || {};
+    document.getElementById("hoursOpen").value = std.open || "";
+    document.getElementById("hoursClose").value = std.close || "";
+    document.getElementById("specialDaysEn").value = spec.days_en || "";
+    document.getElementById("specialDaysHi").value = spec.days_hi || "";
+    document.getElementById("specialOpen").value = spec.open || "";
+    document.getElementById("specialClose").value = spec.close || "";
+    document.getElementById("specialNoteEn").value = spec.note_en || "";
+    document.getElementById("specialNoteHi").value = spec.note_hi || "";
+    document.getElementById("noticeEn").value = h.notice_en || "";
+    document.getElementById("noticeHi").value = h.notice_hi || "";
   }
   function saveHours() {
     const hours = {
-      open: document.getElementById("hoursOpen").value.trim(),
-      close: document.getElementById("hoursClose").value.trim(),
+      standard: {
+        open: document.getElementById("hoursOpen").value.trim(),
+        close: document.getElementById("hoursClose").value.trim()
+      },
+      special: {
+        days_en: document.getElementById("specialDaysEn").value.trim(),
+        days_hi: document.getElementById("specialDaysHi").value.trim(),
+        open: document.getElementById("specialOpen").value.trim(),
+        close: document.getElementById("specialClose").value.trim(),
+        note_en: document.getElementById("specialNoteEn").value.trim(),
+        note_hi: document.getElementById("specialNoteHi").value.trim()
+      },
       notice_en: document.getElementById("noticeEn").value.trim(),
       notice_hi: document.getElementById("noticeHi").value.trim()
     };
@@ -254,23 +299,45 @@
   }
   function saveSchedule() { persist({ schedule: scheduleData }); flashSaved("schedule"); }
 
-  /* ---------------- Samagri panel (repeatable) ---------------- */
-  let samagriData = [];
-  function renderSamagriItems() {
-    const wrap = document.getElementById("samagriItems");
-    wrap.innerHTML = samagriData
-      .map(
-        (it, i) => `<div class="repeat-item" data-i="${i}">
-          <button class="remove-btn" data-remove-samagri="${i}" title="Remove">×</button>
-          <div class="field-row">
-            <div class="field"><label>Item — English</label><input type="text" data-sg="en" data-i="${i}" value="${escapeAttr(it.en)}"></div>
-            <div class="field"><label>Item — Hindi</label><input type="text" data-sg="hi" data-i="${i}" value="${escapeAttr(it.hi)}"></div>
-          </div>
-        </div>`
-      )
-      .join("") || '<p class="hint">List is empty — add the first item below.</p>';
+  /* ---------------- Samagri panel: multiple lists, each with its own items ---------------- */
+  let samagriListsData = [];
+
+  function slugify(str) {
+    return (str || "list").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || `list-${Date.now()}`;
   }
-  function saveSamagri() { persist({ samagri: samagriData }); flashSaved("samagri"); }
+
+  function renderSamagriListsEditor() {
+    const wrap = document.getElementById("samagriListsEditor");
+    wrap.innerHTML = samagriListsData
+      .map((list, li) => {
+        const itemRows = list.items
+          .map(
+            (it, ii) => `<div class="item-row" data-li="${li}" data-ii="${ii}">
+              <input type="text" data-field="en" placeholder="Item — English" value="${escapeAttr(it.en)}">
+              <input type="text" data-field="hi" placeholder="Item — Hindi" value="${escapeAttr(it.hi)}">
+              <input type="text" data-field="qty" placeholder="Quantity" value="${escapeAttr(it.qty)}">
+              <button type="button" class="remove-item-btn" data-remove-item data-li="${li}" data-ii="${ii}" title="Remove item">×</button>
+            </div>`
+          )
+          .join("");
+
+        return `<div class="list-editor-card" data-li="${li}">
+          <div class="list-editor-head">
+            <div class="field"><label>List title — English</label><input type="text" data-list-field="title_en" data-li="${li}" value="${escapeAttr(list.title_en)}"></div>
+            <div class="field"><label>List title — Hindi</label><input type="text" data-list-field="title_hi" data-li="${li}" value="${escapeAttr(list.title_hi)}"></div>
+            <button type="button" class="remove-list-btn" data-remove-list="${li}">Remove list</button>
+          </div>
+          <div class="item-row header-row">
+            <span>Item (English)</span><span>Item (Hindi)</span><span>Quantity</span><span></span>
+          </div>
+          <div data-items-for="${li}">${itemRows}</div>
+          <button type="button" class="btn-add-item" data-add-item="${li}">+ Add item to this list</button>
+        </div>`;
+      })
+      .join("") || '<p class="hint">No samagri lists yet — add one below.</p>';
+  }
+
+  function saveSamagriLists() { persist({ samagriLists: samagriListsData }); flashSaved("samagri"); }
 
   /* ---------------- Hero photo (gallery panel) ---------------- */
   let heroImageData = null;
@@ -302,15 +369,66 @@
     if (!pending) return;
     files.forEach((file) => {
       const reader = new FileReader();
-      reader.onload = () => {
-        galleryData.push({ image: reader.result, caption_en: file.name.replace(/\.[^.]+$/, ""), caption_hi: file.name.replace(/\.[^.]+$/, "") });
+      reader.onload = async () => {
+        const localDataUrl = reader.result;
+        const caption = file.name.replace(/\.[^.]+$/, "");
+        const idx = galleryData.push({ image: localDataUrl, caption_en: caption, caption_hi: caption }) - 1;
         pending -= 1;
         if (pending === 0) renderGalleryUploads();
+        // Upload in the background and swap in the real hosted URL once ready
+        // (only actually calls the network when a backend is configured).
+        const hostedUrl = await uploadImage(localDataUrl, file.name, file.type);
+        if (galleryData[idx]) { galleryData[idx].image = hostedUrl; renderGalleryUploads(); }
       };
       reader.readAsDataURL(file);
     });
   }
   function saveGallery() { persist({ gallery: galleryData, hero_image: heroImageData || content.hero_image || null }); flashSaved("gallery"); }
+
+  /* ---------------- Custodians panel (2 fixed temple-committee people) ---------------- */
+  let custodiansData = [];
+  function renderCustodiansEditor() {
+    const wrap = document.getElementById("custodiansEditor");
+    wrap.innerHTML = custodiansData
+      .map(
+        (c, i) => `<div class="custodian-editor-card" data-ci="${i}">
+          <div class="upload-grid" data-custodian-photo="${i}">
+            ${c.photo
+              ? `<div class="upload-item"><img src="${c.photo}" alt=""><button class="remove-btn" data-remove-custodian-photo="${i}" title="Remove">×</button></div>`
+              : `<label class="upload-drop" style="padding:14px;font-size:0.72rem;"><input type="file" accept="image/*" data-custodian-file="${i}" style="display:none;">Add photo</label>`}
+          </div>
+          <div class="field" style="margin-bottom:10px;"><label>Name</label><input type="text" data-cust-field="name" data-ci="${i}" value="${escapeAttr(c.name)}"></div>
+          <div class="field-row">
+            <div class="field"><label>Role — English</label><input type="text" data-cust-field="role_en" data-ci="${i}" value="${escapeAttr(c.role_en)}"></div>
+            <div class="field"><label>Role — Hindi</label><input type="text" data-cust-field="role_hi" data-ci="${i}" value="${escapeAttr(c.role_hi)}"></div>
+          </div>
+        </div>`
+      )
+      .join("");
+
+    wrap.querySelectorAll("[data-custodian-file]").forEach((input) => {
+      input.addEventListener("change", (e) => {
+        const i = Number(input.dataset.custodianFile);
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async () => {
+          custodiansData[i].photo = reader.result;
+          renderCustodiansEditor();
+          const hostedUrl = await uploadImage(reader.result, file.name, file.type);
+          custodiansData[i].photo = hostedUrl;
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+    wrap.querySelectorAll("[data-remove-custodian-photo]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        custodiansData[Number(btn.dataset.removeCustodianPhoto)].photo = null;
+        renderCustodiansEditor();
+      });
+    });
+  }
+  function saveCustodians() { /* included in saveDonations, see below */ }
 
   /* ---------------- Donations / contact panel ---------------- */
   let qrData = null;
@@ -336,7 +454,8 @@
         mobile: document.getElementById("contactMobile").value.trim()
       },
       bank_details: document.getElementById("bankDetails").value.trim(),
-      qr_image: qrData
+      qr_image: qrData,
+      custodians: custodiansData
     };
     persist(donations);
     flashSaved("donations");
@@ -402,18 +521,22 @@
   function initApp() {
     fillHours();
     scheduleData = JSON.parse(JSON.stringify(content.schedule || []));
-    samagriData = JSON.parse(JSON.stringify(content.samagri || []));
+    samagriListsData = JSON.parse(JSON.stringify(content.samagriLists || []));
     galleryData = JSON.parse(JSON.stringify(content.gallery || []));
+    custodiansData = JSON.parse(JSON.stringify(content.custodians && content.custodians.length === 2
+      ? content.custodians
+      : [{ name: "", role_en: "", role_hi: "", photo: null }, { name: "", role_en: "", role_hi: "", photo: null }]));
     heroImageData = content.hero_image || null;
     renderScheduleItems();
-    renderSamagriItems();
+    renderSamagriListsEditor();
     renderGalleryUploads();
     renderHeroImageUpload();
+    renderCustodiansEditor();
     fillDonations();
 
     document.querySelector('[data-save="hours"]').addEventListener("click", saveHours);
     document.querySelector('[data-save="schedule"]').addEventListener("click", saveSchedule);
-    document.querySelector('[data-save="samagri"]').addEventListener("click", saveSamagri);
+    document.querySelector('[data-save="samagri"]').addEventListener("click", saveSamagriLists);
     document.querySelector('[data-save="gallery"]').addEventListener("click", saveGallery);
     document.querySelector('[data-save="donations"]').addEventListener("click", saveDonations);
 
@@ -433,20 +556,46 @@
       renderScheduleItems();
     });
 
-    document.getElementById("addSamagriItem").addEventListener("click", () => {
-      samagriData.push({ en: "", hi: "" });
-      renderSamagriItems();
+    // Samagri: add list / add item / edit item / remove item / remove list
+    document.getElementById("addSamagriList").addEventListener("click", () => {
+      const title_en = `New List ${samagriListsData.length + 1}`;
+      samagriListsData.push({ id: slugify(title_en), title_en, title_hi: "", items: [{ en: "", hi: "", qty: "" }] });
+      renderSamagriListsEditor();
     });
-    document.getElementById("samagriItems").addEventListener("input", (e) => {
-      const el = e.target.closest("[data-sg]");
-      if (!el) return;
-      samagriData[el.dataset.i][el.dataset.sg] = el.value;
+    const listsEditor = document.getElementById("samagriListsEditor");
+    listsEditor.addEventListener("input", (e) => {
+      const listField = e.target.closest("[data-list-field]");
+      if (listField) {
+        const li = Number(listField.dataset.li);
+        samagriListsData[li][listField.dataset.listField] = listField.value;
+        if (listField.dataset.listField === "title_en") samagriListsData[li].id = slugify(listField.value);
+        return;
+      }
+      const itemRow = e.target.closest("[data-field]");
+      if (itemRow) {
+        const li = Number(itemRow.closest("[data-li]").dataset.li);
+        const ii = Number(itemRow.closest("[data-ii]").dataset.ii);
+        samagriListsData[li].items[ii][itemRow.dataset.field] = itemRow.value;
+      }
     });
-    document.getElementById("samagriItems").addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-remove-samagri]");
-      if (!btn) return;
-      samagriData.splice(Number(btn.dataset.removeSamagri), 1);
-      renderSamagriItems();
+    listsEditor.addEventListener("click", (e) => {
+      const addItemBtn = e.target.closest("[data-add-item]");
+      if (addItemBtn) {
+        samagriListsData[Number(addItemBtn.dataset.addItem)].items.push({ en: "", hi: "", qty: "" });
+        renderSamagriListsEditor();
+        return;
+      }
+      const removeItemBtn = e.target.closest("[data-remove-item]");
+      if (removeItemBtn) {
+        samagriListsData[Number(removeItemBtn.dataset.li)].items.splice(Number(removeItemBtn.dataset.ii), 1);
+        renderSamagriListsEditor();
+        return;
+      }
+      const removeListBtn = e.target.closest("[data-remove-list]");
+      if (removeListBtn) {
+        samagriListsData.splice(Number(removeListBtn.dataset.removeList), 1);
+        renderSamagriListsEditor();
+      }
     });
 
     document.getElementById("galleryFileInput").addEventListener("change", (e) => handleGalleryFiles(e.target.files));
@@ -454,7 +603,11 @@
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = () => { heroImageData = reader.result; renderHeroImageUpload(); };
+      reader.onload = async () => {
+        heroImageData = reader.result;
+        renderHeroImageUpload();
+        heroImageData = await uploadImage(reader.result, file.name, file.type);
+      };
       reader.readAsDataURL(file);
     });
     document.getElementById("galleryUploadGrid").addEventListener("click", (e) => {
@@ -468,8 +621,19 @@
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = () => { qrData = reader.result; renderQrUpload(); };
+      reader.onload = async () => {
+        qrData = reader.result;
+        renderQrUpload();
+        qrData = await uploadImage(reader.result, file.name, file.type);
+      };
       reader.readAsDataURL(file);
+    });
+
+    // Custodian text fields (name/role) — photo handled inside renderCustodiansEditor
+    document.getElementById("custodiansEditor").addEventListener("input", (e) => {
+      const el = e.target.closest("[data-cust-field]");
+      if (!el) return;
+      custodiansData[Number(el.dataset.ci)][el.dataset.custField] = el.value;
     });
 
     renderAnalytics();

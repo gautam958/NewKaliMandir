@@ -27,7 +27,7 @@ a local preview into a live editing tool for everyone who visits the site.
 │   ├── styles.css              — shared design tokens + styles for both pages
 │   └── assets/
 │       └── default-content.json — fallback content the site ships with
-└── .github/workflows/deploy-pages.yml — publishes frontend/ to GitHub Pages
+└── .github/workflows/deploy.yml — publishes frontend/ to GitHub Pages
 ```
 
 ## Local preview
@@ -57,8 +57,8 @@ your browser's `localStorage`, so you can see them reflected live on
    (not "Deploy from a branch" — the branch-deploy option can only serve the
    repo root or a `/docs` folder, and this project keeps the site in
    `/frontend`, so the included Actions workflow is what publishes it).
-3. Push to `main`. `.github/workflows/deploy-pages.yml` builds and deploys
-   the `frontend/` folder automatically on every push that touches it. Check
+3. Push to `main`. `.github/workflows/deploy.yml` builds and deploys
+   the `frontend/` folder automatically on every push. Check
    the **Actions** tab for the deployment URL.
 
 ## Deploy the backend (Azure Functions)
@@ -150,8 +150,43 @@ before assuming the resource group or account setup itself failed.
    friendlier in-browser error message — it does not grant or restrict
    access by itself.
 
+## Themes
+
+The site ships with four selectable color themes, switched via the small
+circular swatch button next to the language toggle (top right on the public
+site; top bar on the admin panel): **Kali Night** (dark maroon, the
+original default), **Dusk** (a lighter deep plum), **Marigold** (light warm
+ivory), and **Sandstone** (light terracotta/sand). The choice is saved per
+browser in `localStorage` — each visitor keeps their own preference.
+
+Every color in `styles.css` is a CSS custom property scoped under
+`html[data-theme="..."]`, so adding a fifth theme is just adding one more
+block with the same set of variable names (copy an existing block and
+adjust the hex values) — see the comment at the top of `styles.css` for the
+full token list, and `agent/architecture-reviewer.md` for the rule about
+never hardcoding a color outside those blocks.
+
+To change the **default** theme new visitors see (currently "dark"), edit
+the fallback value in the `initTheme()` function in both `index.js` and
+`admin.js`:
+```js
+const theme = THEMES.includes(saved) ? saved : "dark"; // change "dark" to e.g. "marigold"
+```
+
 ## How content editing works
 
+- The Samagri tab supports any number of separate, named lists (Daily, Kali
+  Puja Special, Navratri, etc.) — each renders on the public site as its own
+  collapsible table with Download (.txt) and Print buttons. Add or remove
+  whole lists, or individual items within a list, from the admin panel.
+- Gallery photos open in a full-screen lightbox on click, with Previous/Next
+  navigation and Escape-to-close.
+- The Contact Us section shows two temple-committee photos (Priest, Trustee,
+  or whatever roles you set) — edit names, roles, and photos from the
+  Donations & Contact tab.
+- Visiting Hours has a separate, highlighted schedule for the temple's
+  biggest-turnout days (Saturday & Tuesday by default) alongside the
+  standard hours for every other day — both editable from the Hours tab.
 - The public site (`index.html`) always renders from
   `assets/default-content.json`, then overlays whatever the Azure `Content`
   API returns (if configured and reachable), then overlays any local
