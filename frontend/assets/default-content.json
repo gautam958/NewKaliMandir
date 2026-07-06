@@ -1,31 +1,127 @@
 {
   "hero_image": "assets/img/sanctum-wide.jpg",
   "slides": [
-    { "label_en": "The Altar", "label_hi": "वेदी", "image": "assets/img/panchayatan-altar.jpg" },
-    { "label_en": "Puja Night", "label_hi": "पूजा रात्रि", "image": "assets/img/puja-night-gathering.jpg" },
-    { "label_en": "Temple Gate", "label_hi": "मंदिर द्वार", "image": "assets/img/temple-gate.jpg" },
-    { "label_en": "The Sanctum", "label_hi": "गर्भगृह", "image": "assets/img/sanctum-wide.jpg" },
-    { "label_en": "Festival Night", "label_hi": "पर्व रात्रि", "image": "assets/img/festival-night-lights.jpg" },
-    { "label_en": "Nag Devta", "label_hi": "नाग देवता", "image": "assets/img/nag-devta-pillar.jpg" }
+    {
+      "label_en": "The Altar",
+      "label_hi": "वेदी",
+      "image": "assets/img/panchayatan-altar.jpg"
+    },
+    {
+      "label_en": "Puja Night",
+      "label_hi": "पूजा रात्रि",
+      "image": "assets/img/puja-night-gathering.jpg"
+    },
+    {
+      "label_en": "Temple Gate",
+      "label_hi": "मंदिर द्वार",
+      "image": "assets/img/temple-gate.jpg"
+    },
+    {
+      "label_en": "The Sanctum",
+      "label_hi": "गर्भगृह",
+      "image": "assets/img/sanctum-wide.jpg"
+    },
+    {
+      "label_en": "Festival Night",
+      "label_hi": "पर्व रात्रि",
+      "image": "assets/img/festival-night-lights.jpg"
+    },
+    {
+      "label_en": "Nag Devta",
+      "label_hi": "नाग देवता",
+      "image": "assets/img/nag-devta-pillar.jpg"
+    }
   ],
   "gallery": [
-    { "caption_en": "Temple Lane, Belabagan", "caption_hi": "मंदिर गली, बेलाबागान", "image": "assets/img/temple-street.jpg" },
-    { "caption_en": "Temple Courtyard", "caption_hi": "मंदिर आंगन", "image": "assets/img/temple-side-entrance.jpg" },
-    { "caption_en": "Temple Facade", "caption_hi": "मंदिर का मुखौटा", "image": "assets/img/temple-facade.jpg" },
-    { "caption_en": "Temple Gate", "caption_hi": "मंदिर द्वार", "image": "assets/img/temple-gate.jpg" },
-    { "caption_en": "The Sanctum", "caption_hi": "गर्भगृह", "image": "assets/img/sanctum-wide.jpg" },
-    { "caption_en": "Sanctum, Evening Light", "caption_hi": "गर्भगृह, संध्या प्रकाश", "image": "assets/img/sanctum-side.jpg" },
-    { "caption_en": "Inner Sanctum", "caption_hi": "आंतरिक गर्भगृह", "image": "assets/img/sanctum-altar-view.jpg" },
-    { "caption_en": "The Altar", "caption_hi": "वेदी", "image": "assets/img/panchayatan-altar.jpg" },
-    { "caption_en": "Nag Devta Pillar", "caption_hi": "नाग देवता स्तंभ", "image": "assets/img/nag-devta-pillar.jpg" },
-    { "caption_en": "Festival Night", "caption_hi": "पर्व की रात्रि", "image": "assets/img/festival-night-lights.jpg" },
-    { "caption_en": "Puja Night Gathering", "caption_hi": "पूजा रात्रि समागम", "image": "assets/img/puja-night-gathering.jpg" }
+    {
+      "caption_en": "Temple Lane, Belabagan",
+      "caption_hi": "मंदिर गली, बेलाबागान",
+      "image": "assets/img/temple-street.jpg"
+    },
+    {
+      "caption_en": "Temple Courtyard",
+      "caption_hi": "मंदिर आंगन",
+      "image": "assets/img/temple-side-entrance.jpg"
+    },
+    {
+      "caption_en": "Temple Facade",
+      "caption_hi": "मंदिर का मुखौटा",
+      "image": "assets/img/temple-facade.jpg"
+    },
+    {
+      "caption_en": "Temple Gate",
+      "caption_hi": "मंदिर द्वार",
+      "image": "assets/img/temple-gate.jpg"
+    },
+    {
+      "caption_en": "The Sanctum",
+      "caption_hi": "गर्भगृह",
+      "image": "assets/img/sanctum-wide.jpg"
+    },
+    {
+      "caption_en": "Sanctum, Evening Light",
+      "caption_hi": "गर्भगृह, संध्या प्रकाश",
+      "image": "assets/img/sanctum-side.jpg"
+    },
+    {
+      "caption_en": "Inner Sanctum",
+      "caption_hi": "आंतरिक गर्भगृह",
+      "image": "assets/img/sanctum-altar-view.jpg"
+    },
+    {
+      "caption_en": "The Altar",
+      "caption_hi": "वेदी",
+      "image": "assets/img/panchayatan-altar.jpg"
+    },
+    {
+      "caption_en": "Nag Devta Pillar",
+      "caption_hi": "नाग देवता स्तंभ",
+      "image": "assets/img/nag-devta-pillar.jpg"
+    },
+    {
+      "caption_en": "Festival Night",
+      "caption_hi": "पर्व की रात्रि",
+      "image": "assets/img/festival-night-lights.jpg"
+    },
+    {
+      "caption_en": "Puja Night Gathering",
+      "caption_hi": "पूजा रात्रि समागम",
+      "image": "assets/img/puja-night-gathering.jpg"
+    }
   ],
   "schedule": [
-    { "date_en": "Feb – Mar", "date_hi": "फरवरी – मार्च", "title_en": "Vasanti / Basanti Puja", "title_hi": "वासंती पूजा", "desc_en": "Spring worship of the Devi over several days.", "desc_hi": "देवी की वासंतिक आराधना, कई दिनों तक।" },
-    { "date_en": "Sep – Oct", "date_hi": "सितंबर – अक्टूबर", "title_en": "Durga Puja (Sharadiya)", "title_hi": "शारदीय दुर्गा पूजा", "desc_en": "The principal autumn festival of the Devi.", "desc_hi": "देवी का मुख्य शरदकालीन पर्व।" },
-    { "date_en": "Oct – Nov", "date_hi": "अक्टूबर – नवंबर", "title_en": "Kali Puja & Deepavali", "title_hi": "काली पूजा एवं दीपावली", "desc_en": "The temple's principal night of worship, on Amavasya.", "desc_hi": "अमावस्या की रात्रि, मंदिर का प्रमुख पूजा पर्व।" },
-    { "date_en": "Jan", "date_hi": "जनवरी", "title_en": "Poush Sankranti Puja", "title_hi": "पौष संक्रांति पूजा", "desc_en": "New harvest offering to Ma Kali.", "desc_hi": "माँ काली को नई फसल का अर्पण।" }
+    {
+      "date_en": "Feb – Mar",
+      "date_hi": "फरवरी – मार्च",
+      "title_en": "Vasanti / Basanti Puja",
+      "title_hi": "वासंती पूजा",
+      "desc_en": "Spring worship of the Devi over several days.",
+      "desc_hi": "देवी की वासंतिक आराधना, कई दिनों तक।"
+    },
+    {
+      "date_en": "Sep – Oct",
+      "date_hi": "सितंबर – अक्टूबर",
+      "title_en": "Durga Puja (Sharadiya)",
+      "title_hi": "शारदीय दुर्गा पूजा",
+      "desc_en": "The principal autumn festival of the Devi.",
+      "desc_hi": "देवी का मुख्य शरदकालीन पर्व।"
+    },
+    {
+      "date_en": "Oct – Nov",
+      "date_hi": "अक्टूबर – नवंबर",
+      "title_en": "Kali Puja & Deepavali",
+      "title_hi": "काली पूजा एवं दीपावली",
+      "desc_en": "The temple's principal night of worship, on Amavasya.",
+      "desc_hi": "अमावस्या की रात्रि, मंदिर का प्रमुख पूजा पर्व।"
+    },
+    {
+      "date_en": "Jan",
+      "date_hi": "जनवरी",
+      "title_en": "Poush Sankranti Puja",
+      "title_hi": "पौष संक्रांति पूजा",
+      "desc_en": "New harvest offering to Ma Kali.",
+      "desc_hi": "माँ काली को नई फसल का अर्पण।"
+    }
   ],
   "samagriLists": [
     {
@@ -33,11 +129,23 @@
       "title_en": "Daily Puja Samagri",
       "title_hi": "नित्य पूजा सामग्री",
       "items": [
-        { "en": "Red hibiscus (jaba) flowers", "hi": "लाल जवा पुष्प", "qty": "5–7 pieces" },
-        { "en": "Sindoor (vermillion)", "hi": "सिंदूर", "qty": "1 small packet" },
+        {
+          "en": "Red hibiscus (jaba) flowers",
+          "hi": "लाल जवा पुष्प",
+          "qty": "5–7 pieces"
+        },
+        {
+          "en": "Sindoor (vermillion)",
+          "hi": "सिंदूर",
+          "qty": "1 small packet"
+        },
         { "en": "Mustard oil", "hi": "सरसों तेल", "qty": "100 ml" },
         { "en": "Cotton wick (batti)", "hi": "बत्ती", "qty": "4–5 pieces" },
-        { "en": "Incense sticks (agarbatti)", "hi": "अगरबत्ती", "qty": "1 packet" },
+        {
+          "en": "Incense sticks (agarbatti)",
+          "hi": "अगरबत्ती",
+          "qty": "1 packet"
+        },
         { "en": "Camphor (kapoor)", "hi": "कपूर", "qty": "1 small packet" },
         { "en": "Betel leaves", "hi": "पान के पत्ते", "qty": "5 pieces" },
         { "en": "Seasonal fruit", "hi": "मौसमी फल", "qty": "1–2 pieces" }
@@ -48,11 +156,23 @@
       "title_en": "Kali Puja Special Samagri",
       "title_hi": "काली पूजा विशेष सामग्री",
       "items": [
-        { "en": "Red hibiscus garland", "hi": "लाल जवा माला", "qty": "2 garlands" },
+        {
+          "en": "Red hibiscus garland",
+          "hi": "लाल जवा माला",
+          "qty": "2 garlands"
+        },
         { "en": "Red cloth (chunri)", "hi": "लाल चुनरी", "qty": "1 piece" },
         { "en": "Coconut", "hi": "नारियल", "qty": "2 pieces" },
-        { "en": "Sweets (mishti/prasad)", "hi": "मिठाई / प्रसाद", "qty": "500 g" },
-        { "en": "Raw rice (akshat)", "hi": "अक्षत (कच्चा चावल)", "qty": "250 g" },
+        {
+          "en": "Sweets (mishti/prasad)",
+          "hi": "मिठाई / प्रसाद",
+          "qty": "500 g"
+        },
+        {
+          "en": "Raw rice (akshat)",
+          "hi": "अक्षत (कच्चा चावल)",
+          "qty": "250 g"
+        },
         { "en": "Turmeric powder", "hi": "हल्दी पाउडर", "qty": "50 g" },
         { "en": "Oil lamps (diya)", "hi": "दीये", "qty": "5 pieces" },
         { "en": "Black sesame seeds (til)", "hi": "काला तिल", "qty": "100 g" }
@@ -63,12 +183,20 @@
       "title_en": "Navratri / Durga Puja Samagri",
       "title_hi": "नवरात्रि / दुर्गा पूजा सामग्री",
       "items": [
-        { "en": "Mixed flowers (red & yellow)", "hi": "मिश्रित फूल (लाल व पीला)", "qty": "as needed" },
+        {
+          "en": "Mixed flowers (red & yellow)",
+          "hi": "मिश्रित फूल (लाल व पीला)",
+          "qty": "as needed"
+        },
         { "en": "Kalash (copper pot)", "hi": "कलश", "qty": "1 piece" },
         { "en": "Mango leaves", "hi": "आम के पत्ते", "qty": "5 pieces" },
         { "en": "Coconut", "hi": "नारियल", "qty": "1 piece" },
         { "en": "Red cloth (chunri)", "hi": "लाल चुनरी", "qty": "1 piece" },
-        { "en": "Barley/wheat seeds (for jawara)", "hi": "जौ / गेहूं के बीज", "qty": "250 g" },
+        {
+          "en": "Barley/wheat seeds (for jawara)",
+          "hi": "जौ / गेहूं के बीज",
+          "qty": "250 g"
+        },
         { "en": "Durva grass", "hi": "दूर्वा घास", "qty": "1 bunch" },
         { "en": "Assorted fruits", "hi": "विभिन्न फल", "qty": "5 varieties" }
       ]
@@ -92,8 +220,18 @@
     "mobile": "+91-9431777784"
   },
   "custodians": [
-    { "name": "Name Not Yet Added", "role_en": "Temple Priest", "role_hi": "मंदिर पुजारी", "photo": null },
-    { "name": "Name Not Yet Added", "role_en": "Trustee", "role_hi": "न्यासी", "photo": null }
+    {
+      "name": "Lakhi Devi",
+      "role_en": "Temple Priest",
+      "role_hi": "मंदिर पुजारी",
+      "photo": null
+    },
+    {
+      "name": "Moti Thakur",
+      "role_en": "Trustee",
+      "role_hi": "न्यासी",
+      "photo": null
+    }
   ],
   "bank_details": "Details available on request — call +91-9431777784",
   "qr_image": null
