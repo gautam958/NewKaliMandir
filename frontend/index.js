@@ -7,19 +7,40 @@
   const EMERGENCY_FALLBACK = {
     hours: {
       standard: { open: "8:00 AM", close: "4:00 PM" },
-      special: { days_en: "Saturday & Tuesday", days_hi: "शनिवार व मंगलवार", open: "10:00 AM", close: "4:00 PM", note_en: "", note_hi: "" },
-      notice_en: "", notice_hi: ""
+      special: {
+        days_en: "Saturday & Tuesday",
+        days_hi: "शनिवार व मंगलवार",
+        open: "10:00 AM",
+        close: "4:00 PM",
+        note_en: "",
+        note_hi: "",
+      },
+      notice_en: "",
+      notice_hi: "",
     },
-    contact: { address: "N.M Road, Belabagan, Deoghar, Jharkhand, India – 814112", mobile: "+91-9431777784" },
-    slides: [], gallery: [], schedule: [], samagriLists: [], custodians: [], bank_details: "", qr_image: null
+    contact: {
+      address: "N.M Road, Belabagan, Deoghar, Jharkhand, India – 814112",
+      mobile: "+91-9431777784",
+    },
+    slides: [],
+    gallery: [],
+    schedule: [],
+    samagriLists: [],
+    custodians: [],
+    bank_details: "",
+    qr_image: null,
   };
 
   // Azure Functions content API base — set this once the backend is deployed.
-  const API_BASE = window.KALI_MANDIR_API_BASE || null; // e.g. "https://kalimandir-func.azurewebsites.net/api"
+  const API_BASE =
+    "https://communication-fn.azurewebsites.net/api/KaliMandir?code=ybuYDQDF-EC2Fn0ez0UoT9bA0NCDprTb-rsvlb1GNHmVAzFuzGUvPw==" ||
+    null; // e.g. "https://kalimandir-func.azurewebsites.net/api"
 
   async function loadDefaults() {
     try {
-      const res = await fetch("assets/default-content.json", { cache: "no-store" });
+      const res = await fetch("assets/default-content.json", {
+        cache: "no-store",
+      });
       if (!res.ok) throw new Error("bad status");
       return await res.json();
     } catch (err) {
@@ -42,9 +63,13 @@
     }
     // Local admin-panel edits (used until the Azure backend is deployed / for local preview)
     try {
-      const local = JSON.parse(localStorage.getItem("km_content_override") || "null");
+      const local = JSON.parse(
+        localStorage.getItem("km_content_override") || "null",
+      );
       if (local) base = { ...base, ...local };
-    } catch (err) { /* ignore malformed local data */ }
+    } catch (err) {
+      /* ignore malformed local data */
+    }
     return base;
   }
 
@@ -62,7 +87,9 @@
     const options = switchEl.querySelectorAll(".theme-option");
 
     function setActive(t) {
-      options.forEach((o) => o.classList.toggle("active", o.dataset.themeOpt === t));
+      options.forEach((o) =>
+        o.classList.toggle("active", o.dataset.themeOpt === t),
+      );
     }
     setActive(theme);
 
@@ -95,7 +122,9 @@
         const lang = btn.dataset.langBtn;
         html.setAttribute("data-lang", lang);
         localStorage.setItem("km_lang", lang);
-        document.querySelectorAll("[data-lang-btn]").forEach((b) => b.classList.toggle("active", b === btn));
+        document
+          .querySelectorAll("[data-lang-btn]")
+          .forEach((b) => b.classList.toggle("active", b === btn));
       });
     });
   }
@@ -112,21 +141,28 @@
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             const id = entry.target.id;
-            links.forEach((l) => l.classList.toggle("active", l.dataset.target === id));
+            links.forEach((l) =>
+              l.classList.toggle("active", l.dataset.target === id),
+            );
           }
         });
       },
-      { rootMargin: "-40% 0px -50% 0px", threshold: 0 }
+      { rootMargin: "-40% 0px -50% 0px", threshold: 0 },
     );
     sections.forEach((s) => observer.observe(s));
   }
 
   /* ---------------- Fade-in on scroll ---------------- */
   function initFadeIns() {
-    document.querySelectorAll(".section, .hero").forEach((el) => el.classList.add("fade-in"));
+    document
+      .querySelectorAll(".section, .hero")
+      .forEach((el) => el.classList.add("fade-in"));
     const io = new IntersectionObserver(
-      (entries) => entries.forEach((e) => e.isIntersecting && e.target.classList.add("in-view")),
-      { threshold: 0.08 }
+      (entries) =>
+        entries.forEach(
+          (e) => e.isIntersecting && e.target.classList.add("in-view"),
+        ),
+      { threshold: 0.08 },
     );
     document.querySelectorAll(".fade-in").forEach((el) => io.observe(el));
   }
@@ -138,9 +174,11 @@
     const doubled = slides.concat(slides); // seamless loop
     track.innerHTML = doubled
       .map(
-        (s) => `<div class="tile" style="background-image:${s.image ? `url('${s.image}')` : "none"};background:${s.image ? "" : s.color}">
+        (
+          s,
+        ) => `<div class="tile" style="background-image:${s.image ? `url('${s.image}')` : "none"};background:${s.image ? "" : s.color}">
           <span lang-el="en">${s.label_en}</span><span lang-el="hi">${s.label_hi}</span>
-        </div>`
+        </div>`,
       )
       .join("");
   }
@@ -155,9 +193,12 @@
     if (!grid) return;
     grid.innerHTML = galleryItems
       .map(
-        (g, i) => `<div class="g-item" data-idx="${i}" style="${g.image ? `background-image:url('${g.image}')` : ""}">
+        (
+          g,
+          i,
+        ) => `<div class="g-item" data-idx="${i}" style="${g.image ? `background-image:url('${g.image}')` : ""}">
           <span class="cap"><span lang-el="en">${g.caption_en}</span><span lang-el="hi">${g.caption_hi}</span></span>
-        </div>`
+        </div>`,
       )
       .join("");
 
@@ -169,10 +210,18 @@
   function initLightbox() {
     const lightbox = document.getElementById("lightbox");
     if (!lightbox) return;
-    document.getElementById("lightboxClose").addEventListener("click", closeLightbox);
-    document.getElementById("lightboxPrev").addEventListener("click", () => stepLightbox(-1));
-    document.getElementById("lightboxNext").addEventListener("click", () => stepLightbox(1));
-    lightbox.addEventListener("click", (e) => { if (e.target === lightbox) closeLightbox(); });
+    document
+      .getElementById("lightboxClose")
+      .addEventListener("click", closeLightbox);
+    document
+      .getElementById("lightboxPrev")
+      .addEventListener("click", () => stepLightbox(-1));
+    document
+      .getElementById("lightboxNext")
+      .addEventListener("click", () => stepLightbox(1));
+    lightbox.addEventListener("click", (e) => {
+      if (e.target === lightbox) closeLightbox();
+    });
     document.addEventListener("keydown", (e) => {
       if (!lightbox.classList.contains("open")) return;
       if (e.key === "Escape") closeLightbox();
@@ -182,7 +231,12 @@
   }
 
   function openLightbox(index) {
-    if (!galleryItems.length || !galleryItems[index] || !galleryItems[index].image) return;
+    if (
+      !galleryItems.length ||
+      !galleryItems[index] ||
+      !galleryItems[index].image
+    )
+      return;
     lightboxIndex = index;
     renderLightbox();
     document.getElementById("lightbox").classList.add("open");
@@ -199,7 +253,8 @@
     const item = galleryItems[lightboxIndex];
     const lang = document.documentElement.getAttribute("data-lang") || "en";
     document.getElementById("lightboxImg").src = item.image;
-    document.getElementById("lightboxCap").textContent = lang === "hi" ? item.caption_hi : item.caption_en;
+    document.getElementById("lightboxCap").textContent =
+      lang === "hi" ? item.caption_hi : item.caption_en;
   }
 
   function renderSchedule(items) {
@@ -211,18 +266,32 @@
           <div class="t-date"><span lang-el="en">${it.date_en}</span><span lang-el="hi">${it.date_hi}</span></div>
           <div class="t-title"><span lang-el="en">${it.title_en}</span><span lang-el="hi">${it.title_hi}</span></div>
           <div class="t-desc"><span lang-el="en">${it.desc_en}</span><span lang-el="hi">${it.desc_hi}</span></div>
-        </div>`
+        </div>`,
       )
       .join("");
   }
 
   /* ---- Samagri: multiple collapsible, tabular, downloadable/printable lists ---- */
   function escapeHtml(str) {
-    return (str || "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    return (str || "").replace(
+      /[&<>"']/g,
+      (c) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        })[c],
+    );
   }
 
   function getSamagriCheckedState() {
-    try { return JSON.parse(localStorage.getItem("km_samagri_checked") || "{}"); } catch (e) { return {}; }
+    try {
+      return JSON.parse(localStorage.getItem("km_samagri_checked") || "{}");
+    } catch (e) {
+      return {};
+    }
   }
   function setSamagriChecked(listId, itemIdx, checked) {
     const state = getSamagriCheckedState();
@@ -298,9 +367,13 @@
       `${list.title_en} / ${list.title_hi}`,
       "New Kali Mandir, Belabagan, Deoghar",
       "",
-      ...list.items.map((it, i) => `${i + 1}. ${it.en} / ${it.hi} — ${it.qty || ""}`)
+      ...list.items.map(
+        (it, i) => `${i + 1}. ${it.en} / ${it.hi} — ${it.qty || ""}`,
+      ),
     ];
-    const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+    const blob = new Blob([lines.join("\n")], {
+      type: "text/plain;charset=utf-8",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -313,11 +386,15 @@
 
   function printSamagriList(list) {
     const rows = list.items
-      .map((it, i) => `<tr><td>${i + 1}</td><td>${escapeHtml(it.en)}<br><span style="color:#666;font-size:0.9em;">${escapeHtml(it.hi)}</span></td><td>${escapeHtml(it.qty || "")}</td></tr>`)
+      .map(
+        (it, i) =>
+          `<tr><td>${i + 1}</td><td>${escapeHtml(it.en)}<br><span style="color:#666;font-size:0.9em;">${escapeHtml(it.hi)}</span></td><td>${escapeHtml(it.qty || "")}</td></tr>`,
+      )
       .join("");
     const win = window.open("", "_blank", "width=720,height=900");
     if (!win) return; // popup blocked
-    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtml(list.title_en)}</title>
+    win.document
+      .write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtml(list.title_en)}</title>
       <style>
         body{font-family:Georgia,serif;padding:32px;color:#111;}
         h1{font-size:1.4rem;margin-bottom:0;}
@@ -333,7 +410,11 @@
     win.document.close();
     win.onload = () => win.print();
     // Fallback in case onload doesn't fire (some browsers with about:blank docs)
-    setTimeout(() => { try { win.print(); } catch (e) {} }, 400);
+    setTimeout(() => {
+      try {
+        win.print();
+      } catch (e) {}
+    }, 400);
   }
 
   /* ---- Visiting hours: standard + special (Sat/Tue) ---- */
@@ -372,11 +453,14 @@
     if (!contact) return;
     // Scoped to the Contact section so the Donations section's own
     // .contact-row elements (Bank Transfer / In Person) are untouched.
-    const addrEls = document.querySelectorAll('#contact .contact-row .v');
+    const addrEls = document.querySelectorAll("#contact .contact-row .v");
     if (addrEls[0] && contact.address) addrEls[0].textContent = contact.address;
     if (addrEls[1] && contact.mobile) {
       const link = addrEls[1].querySelector("a");
-      if (link) { link.textContent = contact.mobile; link.href = `tel:${contact.mobile.replace(/[^\d+]/g, "")}`; }
+      if (link) {
+        link.textContent = contact.mobile;
+        link.href = `tel:${contact.mobile.replace(/[^\d+]/g, "")}`;
+      }
     }
     const addrCardEn = document.querySelector('.addr-card [lang-el="en"]');
     const addrCardHi = document.querySelector('.addr-card [lang-el="hi"]');
@@ -396,7 +480,7 @@
             <div class="name">${escapeHtml(c.name)}</div>
             <div class="role"><span lang-el="en">${escapeHtml(c.role_en)}</span><span lang-el="hi">${escapeHtml(c.role_hi)}</span></div>
           </div>
-        </div>`
+        </div>`,
       )
       .join("");
   }
@@ -436,14 +520,16 @@
       const log = JSON.parse(localStorage.getItem("km_analytics") || "{}");
       log[today] = (log[today] || 0) + 1;
       localStorage.setItem("km_analytics", JSON.stringify(log));
-    } catch (err) { /* ignore */ }
+    } catch (err) {
+      /* ignore */
+    }
 
     if (API_BASE) {
       fetch(`${API_BASE}/analytics`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ path: location.pathname, ts: Date.now() }),
-        keepalive: true
+        keepalive: true,
       }).catch(() => {});
     }
   }

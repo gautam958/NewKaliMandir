@@ -31,23 +31,23 @@ style or business logic (see `code-reviewer.md` for that).
    path functional. Confirm any new dynamic section follows the same
    defaults-then-override pattern.
 
-4. **Every Azure Function module is self-contained under its own folder.**
-   A module named `Foo` lives at `azure-functions/Foo/function.json` +
-   `azure-functions/Foo/run.csx`. Code shared between modules (CORS headers,
-   Google token verification) belongs in `azure-functions/Shared/*.csx` and
-   is pulled in with `#load`, never copy-pasted across modules — but also
-   never made into a hidden runtime dependency that changes one module's
-   behavior when another is edited. Check `#load` paths resolve correctly
-   after any folder rename.
+4. **The backend is one self-contained function file.**
+   All API endpoints (content, media, analytics) live in
+   `azure-functions/KaliMandir/run.csx`. Adding a new endpoint means adding a
+   new route branch inside that file — do not create new function folders or
+   `function.json` files. All data is stored as JSON files on the Function
+   App drive under `%HOME%/data/` (content.json, analytics.json, media/).
+   Do not re-introduce Azure Blob Storage or Table Storage SDK dependencies —
+   the file-system pattern is intentionally simpler and sufficient for this
+   site's scale.
 
-5. **Storage choice must match access pattern.**
-   Content that's rarely written, wholly read (site copy, schedule, samagri
-   list) → single JSON blob (see `Content` module). High-frequency,
-   independent writes (page-view events) → Table Storage (see `Analytics`
-   module), not a shared JSON blob, to avoid read-modify-write races. Media
-   files → Blob Storage with a generated name, never overwriting existing
-   blobs. Flag any change that stores binary data as base64 inside the JSON
-   content blob — that belongs in the `Media` module instead.
+5. **Storage is always the Function App drive JSON files.**
+   All content (site copy, schedule, samagri lists), analytics, and media
+   metadata live in JSON files under `%HOME%/data/` on the Function App.
+   Media binary files (images) are stored in `%HOME%/data/media/` and served
+   via `GET /api/media?file=<name>`. Do not introduce Azure Blob Storage,
+   Azure Table Storage, or any external database — the file-system pattern is
+   intentional and sufficient for the temple site's data size and traffic.
 
 6. **Auth boundary is server-side, always.**
    Any admin-only capability (editing content, uploading media, reading

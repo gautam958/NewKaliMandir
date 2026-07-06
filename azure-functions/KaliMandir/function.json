@@ -6,12 +6,12 @@
       "direction": "in",
       "name": "req",
       "methods": ["get", "post", "options"],
-      "route": "analytics"
+      "route": "{*route}"
     },
     {
       "type": "http",
       "direction": "out",
-      "name": "res"
+      "name": "$return"
     }
   ]
 }

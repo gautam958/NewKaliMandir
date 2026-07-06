@@ -1,12 +1,14 @@
 {
   "IsEncrypted": false,
   "Values": {
-    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
-    "FUNCTIONS_WORKER_RUNTIME": "dotnet",
-    "GOOGLE_CLIENT_ID": "your-oauth-client-id.apps.googleusercontent.com",
-    "ADMIN_EMAILS": "priest@example.com,secretary@example.com",
-    "ALLOWED_ORIGIN": "https://your-github-username.github.io",
-    "MEDIA_CONTAINER": "media",
-    "CONTENT_CONTAINER": "content"
+    "KL_FUNCTIONS_WORKER_RUNTIME": "dotnet",
+
+    "KL_GOOGLE_CLIENT_ID": "652232946588-qqja2g7d2qn2t930ine0p601b464obr9.apps.googleusercontent.com",
+
+    "KL_ADMIN_EMAILS": "gautam958@gmail.com",
+
+    "KL_ALLOWED_ORIGIN": "https://gautam958.github.io/",
+
+    "KL_MEDIA_MAX_BYTES": "5242880"
   }
 }

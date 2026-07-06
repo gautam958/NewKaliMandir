@@ -16,11 +16,10 @@ a local preview into a live editing tool for everyone who visits the site.
 ```
 ├── agent/                # Guidance for AI coding agents working on this repo
 ├── azure-functions/      # Serverless backend (C# scripting / .csx)
-│   ├── Content/          # GET/POST /api/content   — site copy, schedule, samagri list
-│   ├── Media/             # POST /api/media          — admin photo/QR uploads
-│   ├── Analytics/         # GET/POST /api/analytics  — page-view tracking + dashboard
-│   ├── Shared/            # Code shared between modules via #load
-│   └── host.json
+│   ├── KaliMandir/       # Single consolidated function
+│   │   ├── function.json — HTTP trigger binding (catches all /api/* routes)
+│   │   └── run.csx       — Content, Media, and Analytics endpoints in one file
+│   └── local.settings.json.example — copy to local.settings.json for local dev
 ├── frontend/              # Static site — deploy this folder to GitHub Pages
 │   ├── index.html / index.js   — public site (one JS file, only for this page)
 │   ├── admin.html / admin.js   — admin CMS (one JS file, only for this page)
@@ -67,17 +66,10 @@ Everything below is a one-time setup. You'll need an Azure subscription and
 the [Azure Functions Core Tools](https://learn.microsoft.com/azure/azure-functions/functions-run-local)
 installed locally, plus the Azure CLI (`az`).
 
-1. **Create the resource group, storage account, and function app.**
-   Storage account names must be globally unique and lowercase-alphanumeric
-   only — adjust `kalimandirstore` below if it's taken.
+1. **Create the resource group and function app.**
 
    ```bash
    az group create --name kali-mandir-rg --location centralindia
-
-   az storage account create \
-     --name kalimandirstore \
-     --resource-group kali-mandir-rg \
-     --sku Standard_LRS
 
    az functionapp create \
      --resource-group kali-mandir-rg \
@@ -85,45 +77,53 @@ installed locally, plus the Azure CLI (`az`).
      --runtime dotnet \
      --functions-version 4 \
      --name kalimandir-func \
-     --storage-account kalimandirstore
+     --storage-account <any-storage-account-in-your-subscription>
    ```
 
-2. **Set the app's configuration.** These correspond to the values in
-   `azure-functions/local.settings.json.example` — see the
-   [Environment variables](#environment-variables) table below for what
-   each one does.
+   Unlike the previous version, the backend no longer uses Azure Blob or Table
+   Storage for content or analytics — all data is stored as JSON files on the
+   Function App's own drive under `%HOME%/data/`. This means no extra storage
+   account configuration is needed beyond what Azure creates by default.
+
+2. **Set the app's configuration** (replace the placeholder values):
 
    ```bash
    az functionapp config appsettings set \
      --name kalimandir-func \
      --resource-group kali-mandir-rg \
      --settings \
-       GOOGLE_CLIENT_ID="your-client-id.apps.googleusercontent.com" \
-       ADMIN_EMAILS="priest@example.com,secretary@example.com" \
+       GOOGLE_CLIENT_ID="652232946588-qqja2g7d2qn2t930ine0p601b464obr9.apps.googleusercontent.com" \
+       ADMIN_EMAILS="your-admin-email@gmail.com" \
        ALLOWED_ORIGIN="https://your-github-username.github.io" \
-       CONTENT_CONTAINER="content" \
-       MEDIA_CONTAINER="media"
+       MEDIA_MAX_BYTES="5242880"
    ```
 
-3. **Publish the functions.** Run this from the `azure-functions/` folder.
+   `ADMIN_EMAILS` is the real security gate — the backend rejects requests
+   from any signed-in Google account not on this list, regardless of what the
+   client-side check in admin.html says.
+
+3. **Publish the function.** Run this from the `azure-functions/` folder:
 
    ```bash
    cd azure-functions
    func azure functionapp publish kalimandir-func
    ```
 
-4. **Point the frontend at it.** In `frontend/index.html` and
+4. **Enable CORS in the Azure Portal.** Go to your Function App →
+   **API → CORS**, add your GitHub Pages origin (e.g.
+   `https://your-username.github.io`), and save. This is separate from the
+   CORS headers the function adds itself — Azure's own CORS layer must also
+   allow the origin.
+
+5. **Point the frontend at it.** In `frontend/index.html` and
    `frontend/admin.html`, set:
 
    ```js
-   window.KALI_MANDIR_API_BASE = "https://kalimandir-func.azurewebsites.net/api";
+   window.KALI_MANDIR_API_BASE =
+     "https://communication-fn.azurewebsites.net/api/KaliMandir?code=ybuYDQDF-EC2Fn0ez0UoT9bA0NCDprTb-rsvlb1GNHmVAzFuzGUvPw==";
    ```
 
    Commit and push — the GitHub Pages deploy picks it up automatically.
-
-Azure CLI flags occasionally change between versions — if a command above
-errors, check `az functionapp create --help` for the current flag names
-before assuming the resource group or account setup itself failed.
 
 ## Set up Google Sign-In (admin authentication)
 
@@ -169,6 +169,7 @@ never hardcoding a color outside those blocks.
 To change the **default** theme new visitors see (currently "dark"), edit
 the fallback value in the `initTheme()` function in both `index.js` and
 `admin.js`:
+
 ```js
 const theme = THEMES.includes(saved) ? saved : "dark"; // change "dark" to e.g. "marigold"
 ```
@@ -205,18 +206,22 @@ const theme = THEMES.includes(saved) ? saved : "dark"; // change "dark" to e.g. 
 
 ## Environment variables
 
-| Variable | Where it's set | Purpose |
-|---|---|---|
-| `AzureWebJobsStorage` | Function App (set automatically by `az functionapp create`) | Connection string for Blob + Table Storage |
-| `GOOGLE_CLIENT_ID` | Function App setting | Must match `window.KM_GOOGLE_CLIENT_ID`; used to verify admin tokens were issued for this app |
-| `ADMIN_EMAILS` | Function App setting | Comma-separated list of Google account emails allowed to make admin changes — the real access-control list |
-| `ALLOWED_ORIGIN` | Function App setting | Your GitHub Pages origin, for CORS |
-| `CONTENT_CONTAINER` | Function App setting (optional, defaults to `content`) | Blob container name for the content JSON |
-| `MEDIA_CONTAINER` | Function App setting (optional, defaults to `media`) | Blob container name for uploaded photos |
-| `MEDIA_MAX_BYTES` | Function App setting (optional, defaults to 5 MB) | Per-file upload size cap |
-| `window.KALI_MANDIR_API_BASE` | `frontend/index.html` + `frontend/admin.html` | Base URL of the deployed Azure Functions API |
-| `window.KM_GOOGLE_CLIENT_ID` | `frontend/admin.html` | Google OAuth Client ID (public value, safe to commit) |
-| `window.KM_ADMIN_EMAILS` | `frontend/admin.html` (optional) | Convenience-only allowlist for a friendlier sign-in error message |
+| Variable                      | Where it's set                                               | Purpose                                                                                                                           |
+| ----------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| `GOOGLE_CLIENT_ID`            | Azure Function App setting                                   | Must match `window.KM_GOOGLE_CLIENT_ID`; used to verify admin tokens were issued for this app. Already set to the real Client ID. |
+| `ADMIN_EMAILS`                | Azure Function App setting                                   | Comma-separated list of Google account emails allowed to make admin changes — the real server-side access gate                    |
+| `ALLOWED_ORIGIN`              | Azure Function App setting                                   | Your GitHub Pages origin for CORS, e.g. `https://your-name.github.io`                                                             |
+| `MEDIA_MAX_BYTES`             | Azure Function App setting (optional, defaults to `5242880`) | Per-file upload size cap in bytes (5 MB default)                                                                                  |
+| `window.KALI_MANDIR_API_BASE` | `frontend/index.html` + `frontend/admin.html`                | Base URL of the deployed Azure Functions API                                                                                      |
+| `window.KM_GOOGLE_CLIENT_ID`  | `frontend/admin.html`                                        | Google OAuth Client ID (public value, already set)                                                                                |
+| `window.KM_ADMIN_EMAILS`      | `frontend/admin.html` (optional)                             | Convenience-only allowlist for a friendlier sign-in error message                                                                 |
+
+> **Note on storage:** The previous version used Azure Blob Storage for content
+> and Azure Table Storage for analytics. The consolidated backend now stores
+> everything as JSON files on the Function App's own drive (`%HOME%/data/`),
+> following the same pattern as the PratapTravels reference function. This
+> removes the need for separate storage account containers or Table Storage
+> configuration — the only Azure resource needed is the Function App itself.
 
 ## AI agent guidance
 
