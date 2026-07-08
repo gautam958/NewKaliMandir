@@ -17,15 +17,18 @@ a local preview into a live editing tool for everyone who visits the site.
 ├── agent/                # Guidance for AI coding agents working on this repo
 ├── azure-functions/      # Serverless backend (C# scripting / .csx)
 │   ├── KaliMandir/       # Single consolidated function
-│   │   ├── function.json — HTTP trigger binding (catches all /api/* routes)
-│   │   └── run.csx       — Content, Media, and Analytics endpoints in one file
+│   │   ├── function.json — HTTP trigger binding (function-level auth key)
+│   │   └── run.csx       — Content, Media, and Analytics, dispatched by ?type=
 │   └── local.settings.json.example — copy to local.settings.json for local dev
 ├── frontend/              # Static site — deploy this folder to GitHub Pages
 │   ├── index.html / index.js   — public site (one JS file, only for this page)
 │   ├── admin.html / admin.js   — admin CMS (one JS file, only for this page)
 │   ├── styles.css              — shared design tokens + styles for both pages
+│   ├── favicon.ico / favicon.svg / apple-touch-icon.png / android-chrome-*.png
+│   ├── site.webmanifest        — Android/PWA home-screen icon metadata
 │   └── assets/
-│       └── default-content.json — fallback content the site ships with
+│       ├── default-content.json — fallback content the site ships with
+│       └── img/                 — bundled default photos (temple, gallery, hero)
 └── .github/workflows/deploy.yml — publishes frontend/ to GitHub Pages
 ```
 
@@ -42,12 +45,9 @@ python3 -m http.server 8080
 # or: npx serve .
 ```
 
-Then open `http://localhost:8080`. To preview the admin panel without any
-real Google credentials, open `http://localhost:8080/admin.html` and click
-**"Continue in demo mode"** — this lets you exercise every CMS tab (hours,
-schedule, gallery, samagri list, donations, analytics) with changes saved to
-your browser's `localStorage`, so you can see them reflected live on
-`index.html` in the same browser.
+Then open `http://localhost:8080`. The admin panel (`/admin.html`) requires a
+real Google sign-in — see "Set up Google Sign-In" below. There is no demo/
+preview login; every admin session is a real, verified Google account.
 
 ## Deploy the frontend (GitHub Pages)
 
@@ -62,11 +62,48 @@ your browser's `localStorage`, so you can see them reflected live on
 
 ## Deploy the backend (Azure Functions)
 
-Everything below is a one-time setup. You'll need an Azure subscription and
-the [Azure Functions Core Tools](https://learn.microsoft.com/azure/azure-functions/functions-run-local)
-installed locally, plus the Azure CLI (`az`).
+**Current live setup:** this site's backend runs on a **shared, multi-project
+Function App** (not a dedicated one), reachable at a fixed URL that already
+includes a function-level access key:
 
-1. **Create the resource group and function app.**
+```
+https://communication-fn.azurewebsites.net/api/KaliMandir?code=<key>
+```
+
+Because that URL already ends in a query string, the frontend never appends
+path segments to it (`{base}/content` would be an invalid URL — the `/content`
+would land inside the `code` value). Instead, every request adds a `type`
+query parameter: `{base}&type=content`, `{base}&type=media`, etc. Both
+`index.js` and `admin.js` build these URLs via a small `apiUrl(type, params)`
+helper — if you ever change `KALI_MANDIR_API_BASE`, you don't need to touch
+anything else, the helper composes the query string correctly either way
+(it also works with a plain base URL with no existing `?`, for a
+dedicated Function App).
+
+Because this Function App hosts other projects too, every setting is
+prefixed `KL_` to avoid colliding with their environment variables:
+
+| Variable | Purpose |
+|---|---|
+| `KL_GOOGLE_CLIENT_ID` | Must match `window.KM_GOOGLE_CLIENT_ID` — verifies admin tokens were issued for this app |
+| `KL_ADMIN_EMAILS` | Comma-separated list of Google emails allowed to make admin changes — the real access gate |
+| `KL_ALLOWED_ORIGIN` | Your GitHub Pages origin, for CORS |
+| `KL_MEDIA_MAX_BYTES` | Optional, defaults to `5242880` (5 MB) — per-file upload cap |
+
+**Note on the `?code=` key:** this only gates whether the Function App will
+execute at all (keeps random bots from running up compute costs) — it is
+**not** a secret once the site is live, since it's sitting in plain sight in
+`index.html`/`admin.html`'s source. The real access-control boundary for
+admin actions is the Google-token + `KL_ADMIN_EMAILS` check inside the
+function, not this key.
+
+### Deploying from scratch (a new, dedicated Function App)
+
+If you'd rather run this on its own Function App instead of a shared one,
+the code supports that too — a plain base URL with no existing `?code=`
+works fine with the same `apiUrl()` helper.
+
+1. **Create the resource group and function app:**
 
    ```bash
    az group create --name kali-mandir-rg --location centralindia
@@ -80,27 +117,22 @@ installed locally, plus the Azure CLI (`az`).
      --storage-account <any-storage-account-in-your-subscription>
    ```
 
-   Unlike the previous version, the backend no longer uses Azure Blob or Table
-   Storage for content or analytics — all data is stored as JSON files on the
-   Function App's own drive under `%HOME%/data/`. This means no extra storage
-   account configuration is needed beyond what Azure creates by default.
+   No Blob or Table Storage setup needed — all data is stored as JSON files
+   on the Function App's own drive under `%HOME%/data/`.
 
-2. **Set the app's configuration** (replace the placeholder values):
+2. **Set the app's configuration** (same `KL_`-prefixed names as above,
+   regardless of whether the Function App is shared or dedicated):
 
    ```bash
    az functionapp config appsettings set \
      --name kalimandir-func \
      --resource-group kali-mandir-rg \
      --settings \
-       GOOGLE_CLIENT_ID="652232946588-qqja2g7d2qn2t930ine0p601b464obr9.apps.googleusercontent.com" \
-       ADMIN_EMAILS="your-admin-email@gmail.com" \
-       ALLOWED_ORIGIN="https://your-github-username.github.io" \
-       MEDIA_MAX_BYTES="5242880"
+       KL_GOOGLE_CLIENT_ID="652232946588-qqja2g7d2qn2t930ine0p601b464obr9.apps.googleusercontent.com" \
+       KL_ADMIN_EMAILS="your-admin-email@gmail.com" \
+       KL_ALLOWED_ORIGIN="https://your-github-username.github.io" \
+       KL_MEDIA_MAX_BYTES="5242880"
    ```
-
-   `ADMIN_EMAILS` is the real security gate — the backend rejects requests
-   from any signed-in Google account not on this list, regardless of what the
-   client-side check in admin.html says.
 
 3. **Publish the function.** Run this from the `azure-functions/` folder:
 
@@ -109,18 +141,26 @@ installed locally, plus the Azure CLI (`az`).
    func azure functionapp publish kalimandir-func
    ```
 
-4. **Enable CORS in the Azure Portal.** Go to your Function App →
-   **API → CORS**, add your GitHub Pages origin (e.g.
-   `https://your-username.github.io`), and save. This is separate from the
-   CORS headers the function adds itself — Azure's own CORS layer must also
+   If deployed with `"authLevel": "function"` (the current setting in
+   `function.json`), Azure auto-generates a function key — copy it from
+   Function App → **Functions → KaliMandir → Function Keys** and append it
+   as `?code=<key>` on the base URL you set on the frontend, below. Switch
+   `authLevel` to `"anonymous"` in `function.json` before publishing if you'd
+   rather not use a key at all (relies solely on the Google-token check for
+   admin actions, with content/media reads fully open).
+
+4. **Enable CORS in the Azure Portal.** Function App → **API → CORS**, add
+   your GitHub Pages origin, and save. This is separate from the CORS
+   headers the function adds itself — Azure's own CORS layer must also
    allow the origin.
 
 5. **Point the frontend at it.** In `frontend/index.html` and
    `frontend/admin.html`, set:
 
    ```js
-   window.KALI_MANDIR_API_BASE =
-     "https://communication-fn.azurewebsites.net/api/KaliMandir?code=ybuYDQDF-EC2Fn0ez0UoT9bA0NCDprTb-rsvlb1GNHmVAzFuzGUvPw==";
+   window.KALI_MANDIR_API_BASE = "https://kalimandir-func.azurewebsites.net/api/KaliMandir?code=<key>";
+   // or, with authLevel "anonymous" and no key:
+   window.KALI_MANDIR_API_BASE = "https://kalimandir-func.azurewebsites.net/api/KaliMandir";
    ```
 
    Commit and push — the GitHub Pages deploy picks it up automatically.
@@ -134,21 +174,24 @@ installed locally, plus the Azure CLI (`az`).
    local preview origin, e.g.:
    - `https://your-github-username.github.io`
    - `http://localhost:8080`
-3. Copy the generated **Client ID** (looks like
-   `123...apps.googleusercontent.com`) into `frontend/admin.html`:
+3. Copy the generated **Client ID** into `frontend/admin.html` (already done
+   for this deployment):
 
    ```js
-   window.KM_GOOGLE_CLIENT_ID = "123...apps.googleusercontent.com";
+   window.KM_GOOGLE_CLIENT_ID = "652232946588-qqja2g7d2qn2t930ine0p601b464obr9.apps.googleusercontent.com";
    ```
 
-4. Set the **same** client ID as the `GOOGLE_CLIENT_ID` app setting on the
-   Function App (step 2 of the backend deployment above) — the backend
-   checks that tokens were issued for this exact client ID.
-5. Add each authorized admin's Google account email to `ADMIN_EMAILS` on the
-   Function App. This server-side list is the real security boundary.
+4. Set the **same** client ID as the `KL_GOOGLE_CLIENT_ID` app setting on the
+   Function App — the backend checks that tokens were issued for this exact
+   client ID.
+5. Add each authorized admin's Google account email to `KL_ADMIN_EMAILS` on
+   the Function App. This server-side list is the real security boundary.
    `window.KM_ADMIN_EMAILS` in `admin.html` is optional and only produces a
    friendlier in-browser error message — it does not grant or restrict
    access by itself.
+
+There is no demo/bypass login — `admin.html` only ever shows the real Google
+Sign-In button (once `KM_GOOGLE_CLIENT_ID` is set) with no fallback path.
 
 ## Themes
 
@@ -169,7 +212,6 @@ never hardcoding a color outside those blocks.
 To change the **default** theme new visitors see (currently "dark"), edit
 the fallback value in the `initTheme()` function in both `index.js` and
 `admin.js`:
-
 ```js
 const theme = THEMES.includes(saved) ? saved : "dark"; // change "dark" to e.g. "marigold"
 ```
@@ -206,22 +248,26 @@ const theme = THEMES.includes(saved) ? saved : "dark"; // change "dark" to e.g. 
 
 ## Environment variables
 
-| Variable                      | Where it's set                                               | Purpose                                                                                                                           |
-| ----------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
-| `GOOGLE_CLIENT_ID`            | Azure Function App setting                                   | Must match `window.KM_GOOGLE_CLIENT_ID`; used to verify admin tokens were issued for this app. Already set to the real Client ID. |
-| `ADMIN_EMAILS`                | Azure Function App setting                                   | Comma-separated list of Google account emails allowed to make admin changes — the real server-side access gate                    |
-| `ALLOWED_ORIGIN`              | Azure Function App setting                                   | Your GitHub Pages origin for CORS, e.g. `https://your-name.github.io`                                                             |
-| `MEDIA_MAX_BYTES`             | Azure Function App setting (optional, defaults to `5242880`) | Per-file upload size cap in bytes (5 MB default)                                                                                  |
-| `window.KALI_MANDIR_API_BASE` | `frontend/index.html` + `frontend/admin.html`                | Base URL of the deployed Azure Functions API                                                                                      |
-| `window.KM_GOOGLE_CLIENT_ID`  | `frontend/admin.html`                                        | Google OAuth Client ID (public value, already set)                                                                                |
-| `window.KM_ADMIN_EMAILS`      | `frontend/admin.html` (optional)                             | Convenience-only allowlist for a friendlier sign-in error message                                                                 |
+| Variable | Where it's set | Purpose |
+|---|---|---|
+| `KL_GOOGLE_CLIENT_ID` | Azure Function App setting | Must match `window.KM_GOOGLE_CLIENT_ID`; used to verify admin tokens were issued for this app. Already set to the real Client ID. |
+| `KL_ADMIN_EMAILS` | Azure Function App setting | Comma-separated list of Google account emails allowed to make admin changes — the real server-side access gate |
+| `KL_ALLOWED_ORIGIN` | Azure Function App setting | Your GitHub Pages origin for CORS, e.g. `https://your-name.github.io` |
+| `KL_MEDIA_MAX_BYTES` | Azure Function App setting (optional, defaults to `5242880`) | Per-file upload size cap in bytes (5 MB default) |
+| `window.KALI_MANDIR_API_BASE` | `frontend/index.html` + `frontend/admin.html` | Base URL of the deployed Azure Functions API — may already include `?code=...` if using function-level auth on a shared Function App |
+| `window.KM_GOOGLE_CLIENT_ID` | `frontend/admin.html` | Google OAuth Client ID (public value, already set) |
+| `window.KM_ADMIN_EMAILS` | `frontend/admin.html` (optional) | Convenience-only allowlist for a friendlier sign-in error message |
 
-> **Note on storage:** The previous version used Azure Blob Storage for content
-> and Azure Table Storage for analytics. The consolidated backend now stores
-> everything as JSON files on the Function App's own drive (`%HOME%/data/`),
-> following the same pattern as the PratapTravels reference function. This
-> removes the need for separate storage account containers or Table Storage
-> configuration — the only Azure resource needed is the Function App itself.
+The `KL_` prefix (rather than plain `GOOGLE_CLIENT_ID`, etc.) exists because
+this backend may run on a Function App shared with other, unrelated
+projects — the prefix avoids clashing with their environment variables.
+
+> **Note on storage:** all content, analytics, and uploaded images are stored
+> as JSON/binary files on the Function App's own drive (`%HOME%/data/`),
+> following the PratapTravels reference pattern — no Blob or Table Storage
+> needed. The Function App drive persists within a deployment but isn't
+> backed up automatically; back up periodically via `GET ?type=content` if
+> you redeploy or scale beyond a single instance.
 
 ## AI agent guidance
 

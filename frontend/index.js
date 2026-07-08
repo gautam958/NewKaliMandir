@@ -35,6 +35,21 @@
   const API_BASE =
     "https://communication-fn.azurewebsites.net/api/KaliMandir?code=ybuYDQDF-EC2Fn0ez0UoT9bA0NCDprTb-rsvlb1GNHmVAzFuzGUvPw==" ||
     null; // e.g. "https://kalimandir-func.azurewebsites.net/api"
+  // Builds a request URL against API_BASE using query-param dispatch
+  // (?type=content, ?type=media, ...) rather than appending path segments.
+  // This matters because API_BASE may already end in "?code=..." (a Function
+  // App key) — appending "/content" after a query string produces an invalid
+  // URL, but appending "&type=content" always composes safely.
+  function apiUrl(type, params) {
+    if (!API_BASE) return null;
+    const sep = API_BASE.includes("?") ? "&" : "?";
+    let url = `${API_BASE}${sep}type=${encodeURIComponent(type)}`;
+    if (params) {
+      for (const key in params)
+        url += `&${key}=${encodeURIComponent(params[key])}`;
+    }
+    return url;
+  }
 
   async function loadDefaults() {
     try {
@@ -54,7 +69,7 @@
 
     if (API_BASE) {
       try {
-        const res = await fetch(`${API_BASE}/content`, { cache: "no-store" });
+        const res = await fetch(apiUrl("content"), { cache: "no-store" });
         if (!res.ok) throw new Error("bad status");
         base = { ...base, ...(await res.json()) };
       } catch (err) {
@@ -363,58 +378,109 @@
   }
 
   function downloadSamagriList(list) {
+    const lang = document.documentElement.getAttribute("data-lang") || "en";
+    const title = lang === "hi" ? list.title_hi : list.title_en;
     const lines = [
-      `${list.title_en} / ${list.title_hi}`,
+      title,
       "New Kali Mandir, Belabagan, Deoghar",
       "",
-      ...list.items.map(
-        (it, i) => `${i + 1}. ${it.en} / ${it.hi} — ${it.qty || ""}`,
-      ),
+      ...list.items.map((it, i) => {
+        const name =
+          lang === "hi" ? `${it.hi} (${it.en})` : `${it.en} / ${it.hi}`;
+        const qty = it.qty ? ` — ${it.qty}` : "";
+        return `${i + 1}. ${name}${qty}`;
+      }),
     ];
-    const blob = new Blob([lines.join("\n")], {
+
+    // Use a BOM so apps like Excel / Notepad recognise UTF-8 (important for Hindi text).
+    const bom = "\uFEFF";
+    const blob = new Blob([bom + lines.join("\r\n")], {
       type: "text/plain;charset=utf-8",
     });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
     a.download = `${list.id}-puja-samagri.txt`;
+    a.style.display = "none";
     document.body.appendChild(a);
     a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    // Delay revocation — some browsers (especially on mobile) need time to
+    // read the object URL before it is invalidated.
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+      a.remove();
+    }, 3000);
   }
 
   function printSamagriList(list) {
+    const lang = document.documentElement.getAttribute("data-lang") || "en";
+    const title = lang === "hi" ? list.title_hi : list.title_en;
+
     const rows = list.items
-      .map(
-        (it, i) =>
-          `<tr><td>${i + 1}</td><td>${escapeHtml(it.en)}<br><span style="color:#666;font-size:0.9em;">${escapeHtml(it.hi)}</span></td><td>${escapeHtml(it.qty || "")}</td></tr>`,
-      )
+      .map((it, i) => {
+        const name =
+          lang === "hi"
+            ? `${escapeHtml(it.hi)}<br><span style="color:#666;font-size:0.88em;">${escapeHtml(it.en)}</span>`
+            : `${escapeHtml(it.en)}<br><span style="color:#666;font-size:0.88em;">${escapeHtml(it.hi)}</span>`;
+        return `<tr>
+          <td style="width:28px">${i + 1}</td>
+          <td>${name}</td>
+          <td style="white-space:nowrap;color:#555">${escapeHtml(it.qty || "")}</td>
+        </tr>`;
+      })
       .join("");
-    const win = window.open("", "_blank", "width=720,height=900");
-    if (!win) return; // popup blocked
-    win.document
-      .write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtml(list.title_en)}</title>
-      <style>
-        body{font-family:Georgia,serif;padding:32px;color:#111;}
-        h1{font-size:1.4rem;margin-bottom:0;}
-        .sub{color:#666;margin-top:4px;margin-bottom:24px;font-size:0.9rem;}
-        table{width:100%;border-collapse:collapse;}
-        th,td{text-align:left;padding:8px 10px;border-bottom:1px solid #ddd;font-size:0.95rem;}
-        th{color:#7a0c1e;text-transform:uppercase;font-size:0.72rem;letter-spacing:0.04em;}
-      </style></head><body>
-      <h1>${escapeHtml(list.title_en)} / ${escapeHtml(list.title_hi)}</h1>
-      <div class="sub">New Kali Mandir, Belabagan, Deoghar</div>
-      <table><thead><tr><th>#</th><th>Item</th><th>Quantity</th></tr></thead><tbody>${rows}</tbody></table>
-      </body></html>`);
-    win.document.close();
-    win.onload = () => win.print();
-    // Fallback in case onload doesn't fire (some browsers with about:blank docs)
-    setTimeout(() => {
-      try {
-        win.print();
-      } catch (e) {}
-    }, 400);
+
+    const html = `<!DOCTYPE html>
+<html lang="${lang}">
+<head>
+  <meta charset="utf-8">
+  <title>${escapeHtml(title)}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Mukta:wght@400;600&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Mukta', Georgia, serif; padding: 36px 40px; color: #1a1a1a; font-size: 14px; }
+    h1 { font-size: 1.35rem; color: #7a0c1e; margin-bottom: 2px; }
+    .sub { color: #555; font-size: 0.85rem; margin-bottom: 24px; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; padding: 7px 10px; border-bottom: 2px solid #c8203f;
+         font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; color: #7a0c1e; }
+    td { padding: 9px 10px; border-bottom: 1px dashed #ddd; vertical-align: top; line-height: 1.4; }
+    tr:last-child td { border-bottom: none; }
+    .footer { margin-top: 28px; font-size: 0.75rem; color: #999; border-top: 1px solid #eee; padding-top: 10px; }
+    @media print {
+      body { padding: 12px 16px; }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <h1>${escapeHtml(title)}</h1>
+  <div class="sub">New Kali Mandir, Belabagan, Deoghar &nbsp;·&nbsp; N.M Road, 814112</div>
+  <table>
+    <thead><tr><th>#</th><th>Item / वस्तु</th><th>Qty</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div class="footer">newkalimandir.github.io &nbsp;·&nbsp; +91-9431777784</div>
+  <p class="no-print" style="margin-top:24px;text-align:center">
+    <button onclick="window.print()" style="padding:10px 28px;background:#c8203f;color:#fff;border:none;border-radius:4px;font-size:1rem;cursor:pointer">🖨 Print / Save as PDF</button>
+  </p>
+</body>
+</html>`;
+
+    // Blob URL, not a data: URL — Chrome silently blocks window.open() on
+    // data: URLs (returns a non-null "window" that never actually navigates,
+    // so a `!win` fallback check never fires), but has no such restriction
+    // on blob: URLs, which is exactly this same-origin-generated-content case.
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const win = window.open(url, "_blank");
+    if (win) {
+      // Revoke once the new tab has had time to load the content it needs.
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    } else {
+      URL.revokeObjectURL(url);
+      alert("Please allow pop-ups for this site to use the Print feature.");
+    }
   }
 
   /* ---- Visiting hours: standard + special (Sat/Tue) ---- */
@@ -525,7 +591,7 @@
     }
 
     if (API_BASE) {
-      fetch(`${API_BASE}/analytics`, {
+      fetch(apiUrl("analytics"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ path: location.pathname, ts: Date.now() }),

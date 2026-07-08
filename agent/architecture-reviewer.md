@@ -31,23 +31,27 @@ style or business logic (see `code-reviewer.md` for that).
    path functional. Confirm any new dynamic section follows the same
    defaults-then-override pattern.
 
-4. **The backend is one self-contained function file.**
+4. **The backend is one self-contained function file, dispatched by query param.**
    All API endpoints (content, media, analytics) live in
-   `azure-functions/KaliMandir/run.csx`. Adding a new endpoint means adding a
-   new route branch inside that file — do not create new function folders or
-   `function.json` files. All data is stored as JSON files on the Function
-   App drive under `%HOME%/data/` (content.json, analytics.json, media/).
-   Do not re-introduce Azure Blob Storage or Table Storage SDK dependencies —
-   the file-system pattern is intentionally simpler and sufficient for this
-   site's scale.
+   `azure-functions/KaliMandir/run.csx`, distinguished by a `type` query
+   parameter plus HTTP method — not by URL path (the deployed base URL may
+   already end in `?code=...`, so path segments after it aren't reliable).
+   Adding a new endpoint means adding a new `if (type == "..." && isGet/isPost)`
+   branch inside that file — do not create new function folders or
+   `function.json` files, and do not add path-based routing. All data is
+   stored as JSON files on the Function App drive under `%HOME%/data/`
+   (content.json, analytics.json, media/). Do not re-introduce Azure Blob
+   Storage or Table Storage SDK dependencies — the file-system pattern is
+   intentionally simpler and sufficient for this site's scale.
 
 5. **Storage is always the Function App drive JSON files.**
    All content (site copy, schedule, samagri lists), analytics, and media
    metadata live in JSON files under `%HOME%/data/` on the Function App.
    Media binary files (images) are stored in `%HOME%/data/media/` and served
-   via `GET /api/media?file=<name>`. Do not introduce Azure Blob Storage,
-   Azure Table Storage, or any external database — the file-system pattern is
-   intentional and sufficient for the temple site's data size and traffic.
+   via `?type=media&file=<name>` (query-param dispatch, not a path route —
+   see rule 4). Do not introduce Azure Blob Storage, Azure Table Storage, or
+   any external database — the file-system pattern is intentional and
+   sufficient for the temple site's data size and traffic.
 
 6. **Auth boundary is server-side, always.**
    Any admin-only capability (editing content, uploading media, reading

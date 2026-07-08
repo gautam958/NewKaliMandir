@@ -23,6 +23,15 @@ There's no build step and no bundler by design (see
     → JSON asset; `localStorage` override present → override wins. Test
     each layer failing independently, not just the happy path.
   - The samagri checklist persists checked state across reload.
+  - `apiUrl(type, params)` in both `index.js` and `admin.js` composes URLs
+    correctly whether `KALI_MANDIR_API_BASE` already contains a query string
+    (e.g. `...?code=xyz`, from a shared Function App's key) or not. Test both
+    shapes explicitly — `apiUrl("media", {file: "x.jpg"})` must produce a
+    valid, parseable URL (`new URL(...)` shouldn't throw) in either case.
+    This one is easy to silently break: appending `/content` after an
+    existing `?code=...` produces a URL that still *looks* plausible in a
+    diff but is actually broken, since a path segment can't follow a query
+    string.
   - Any function that builds HTML via template strings, when given input
     containing `<`, `>`, `"`, or `&` — confirm it's escaped (this doubles as
     an XSS regression test, see `code-reviewer.md`).
@@ -34,35 +43,50 @@ There's no build step and no bundler by design (see
   with unit tests — don't force a DOM assertion to cover what's really a
   layout question.
 
-## Backend (`azure-functions/`)
+## Backend (`azure-functions/KaliMandir/run.csx`)
 
 - **Use the Azure Functions Core Tools local runtime** (`func start`) for
-  integration-style tests against a real (local) storage emulator (Azurite),
-  rather than trying to unit-test `.csx` files in isolation — the scripting
-  model isn't built for easy dependency injection/mocking.
-- For each module, cover at minimum:
-  - `Content`: GET with no blob yet returns `{}`, not an error. POST without
-    an `Authorization` header returns 401. POST with a token whose `aud`
-    doesn't match `GOOGLE_CLIENT_ID` returns 401. POST merges rather than
+  integration-style tests, rather than trying to unit-test the `.csx` file
+  in isolation — the scripting model isn't built for easy dependency
+  injection/mocking. Point `HOME` at a temp directory locally so tests don't
+  read/write real data files.
+- Every endpoint is dispatched by a `type` query parameter plus HTTP method,
+  not by URL path — write tests as `(method, type, query/body) → expected
+  response`, covering at minimum:
+  - `type=content`, GET: no `content.json` yet → returns `{}`, not an error.
+  - `type=content`, POST: missing `Authorization` header → 401. Token whose
+    `aud` doesn't match `KL_GOOGLE_CLIENT_ID` → 401. Merges rather than
     replaces existing fields (post `{"hours": {...}}` twice with different
     values, confirm `schedule` from the first call survives the second).
-  - `Media`: rejects a file over `MEDIA_MAX_BYTES`. Rejects malformed
-    base64. Returns a URL that's actually publicly fetchable after upload.
-  - `Analytics`: POST requires no auth and always succeeds with valid JSON.
-    GET requires auth and returns correctly bucketed `byDay` counts across a
-    day boundary (write two events on different UTC dates, confirm they land
-    in different buckets).
-  - Every module: OPTIONS returns 204 with CORS headers, and every response
-    path (including error responses) carries `Access-Control-Allow-Origin`.
+  - `type=media`, POST: rejects a file over `KL_MEDIA_MAX_BYTES`. Rejects
+    malformed base64. Returns `{filename: "..."}` — confirm it does **not**
+    try to return a constructed URL (that's the frontend's job, via
+    `apiUrl()`, since the function doesn't know its own externally-visible
+    base URL or function key).
+  - `type=media`, GET with `file=<name>`: rejects any value containing `..`,
+    `/`, or `\` (path traversal). 404s for a name that was never uploaded.
+  - `type=analytics`, POST: no auth required, always succeeds with valid
+    JSON body. GET: requires auth, returns correctly bucketed `byDay` counts
+    across a day boundary (write two events on different UTC dates, confirm
+    they land in different buckets).
+  - Missing or unrecognized `type` → falls through to the status/routes
+    fallback response, not an error.
+  - OPTIONS returns 204 with CORS headers, and every response path
+    (including error responses, via `CorsResult`) carries
+    `Access-Control-Allow-Origin`.
 - Mock Google's tokeninfo endpoint rather than hitting the real network in
-  tests — assert `GoogleAuth.VerifyAdminAsync`'s branches (missing header,
-  network failure, bad audience, unverified email, email not on allowlist)
-  independently.
+  tests — assert `VerifyAdminAsync`'s branches (missing header, network
+  failure, bad audience, unverified email, email not on `KL_ADMIN_EMAILS`
+  allowlist) independently.
+- This function may be deployed on a **shared Function App** alongside
+  unrelated projects, with `authLevel: "function"` (a key required for every
+  invocation). Don't assume `authLevel: "anonymous"` in tests — read it from
+  the actual `function.json` rather than hardcoding an assumption.
 
 ## What not to do
 
 - Don't add a testing framework that requires `npm run build` for the
   frontend — it must stay deployable as-is to GitHub Pages.
 - Don't test third-party behavior (Google Identity Services' own button
-  rendering, Azure Blob Storage's own durability) — test this repo's code
-  at the boundary where it calls into those services.
+  rendering, the Function App drive's own durability) — test this repo's
+  code at the boundary where it calls into those services.

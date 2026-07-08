@@ -35,27 +35,43 @@ already pass and focus here on the code itself.
   treats `km_content_override` or `km_analytics` as the durable source of
   truth once a real backend exists — it's per-browser and easily cleared.
 
-## Backend (C# scripting / `.csx`)
+## Backend (C# scripting / `.csx`, single consolidated function)
 
-- **Every state-changing endpoint verifies the caller.** `POST /api/content`
-  and `POST /api/media` must call `GoogleAuth.VerifyAdminAsync` before doing
-  anything else. `POST /api/analytics` is intentionally anonymous (it's a
-  page-view beacon) — don't add auth there, and don't remove it from the
-  others.
-- **No secrets in code or in committed config.** Connection strings, the
-  Google client ID's *secret* (not the public client ID), and admin emails
-  belong in Function App settings / `local.settings.json` (gitignored), never
-  hardcoded in a `.csx` file. Check any new module reads config via
-  `Environment.GetEnvironmentVariable`, not a literal string.
+- **Every state-changing branch verifies the caller.** `type=content`+POST
+  and `type=media`+POST must call `VerifyAdminAsync` before doing anything
+  else. `type=analytics`+POST is intentionally anonymous (it's a page-view
+  beacon) — don't add auth there, and don't remove it from the others.
+- **No secrets in code or in committed config.** The Google client ID's
+  *secret* (not the public client ID — that one's fine to commit), admin
+  emails, and the function-level `code` key belong in Function App settings
+  / `local.settings.json` (gitignored), never hardcoded in `run.csx`. Check
+  any new branch reads config via `Environment.GetEnvironmentVariable` with
+  the `KL_` prefix, not a literal string or an unprefixed name that could
+  collide with another project on the same shared Function App.
+- **Dispatch by `type` query param, not URL path.** This function's base URL
+  may already end in `?code=...` (function-level auth key on a shared
+  Function App) — routing logic must never assume path segments after the
+  base URL are meaningful, since `{base}?code=X/content` isn't a valid path
+  at all. New endpoints add another `if (type == "..." && isGet/isPost)`
+  branch, not a new path check.
 - **CORS headers on every response, including error paths.** Use
-  `WithCors(...)` from `Shared/Cors.csx` on every `HttpResponseMessage` a
-  module returns — a response that skips it will fail silently in the
-  browser with an opaque CORS error that's hard to debug from the client
-  side.
-- **Validate and bound external input.** Uploaded file size (`Media`),
-  JSON parse failures (`Content`), and malformed bearer tokens should return
-  a clear 4xx with a JSON `{ "error": "..." }` body, not throw an unhandled
-  exception that surfaces as a 500 with no explanation.
+  `CorsResult(...)` on every `IActionResult` this function returns — a
+  response that skips it will fail silently in the browser with an opaque
+  CORS error that's hard to debug from the client side. The one exception is
+  the raw `FileContentResult` for serving media files, which browsers load
+  via `<img src>` rather than `fetch()` and so don't need CORS headers — but
+  don't let that become an excuse to skip CORS on any `fetch()`-reached path.
+- **Media endpoints return filenames, not URLs.** `type=media`+POST returns
+  `{filename: "..."}` — it must not try to construct a full URL back to
+  itself, since the function doesn't reliably know its own externally
+  visible base URL or function key. Building the final fetchable URL is the
+  frontend's job (`apiUrl("media", {file: ...})` in admin.js) — don't
+  reintroduce server-side URL construction here.
+- **Validate and bound external input.** Uploaded file size
+  (`KL_MEDIA_MAX_BYTES`), JSON parse failures, path-traversal attempts in
+  `?file=`, and malformed bearer tokens should return a clear 4xx with a
+  JSON `{ "error": "..." }` body, not throw an unhandled exception that
+  surfaces as a 500 with no explanation.
 - **NuGet references pinned to a version.** `#r "nuget: Package, X.Y.Z"`
   must specify a version — an unpinned reference makes builds
   non-reproducible.

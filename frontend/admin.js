@@ -5,8 +5,7 @@
   /* =========================================================================
      CONFIG
      Set these two values once real credentials exist. Until KM_GOOGLE_CLIENT_ID
-     is set, the real Google Sign-In button cannot render, and only "Demo mode"
-     is available to preview the CMS.
+     is set, the Google Sign-In button cannot render.
      ========================================================================= */
   const GOOGLE_CLIENT_ID = window.KM_GOOGLE_CLIENT_ID || "";
   // Convenience-only, client-side allowlist for showing a friendly error.
@@ -17,6 +16,19 @@
   const API_BASE =
     "https://communication-fn.azurewebsites.net/api/KaliMandir?code=ybuYDQDF-EC2Fn0ez0UoT9bA0NCDprTb-rsvlb1GNHmVAzFuzGUvPw==" ||
     null;
+
+  // See index.js for why this exists: API_BASE may already end in "?code=...",
+  // so we must compose additional params with "&", never append a path segment.
+  function apiUrl(type, params) {
+    if (!API_BASE) return null;
+    const sep = API_BASE.includes("?") ? "&" : "?";
+    let url = `${API_BASE}${sep}type=${encodeURIComponent(type)}`;
+    if (params) {
+      for (const key in params)
+        url += `&${key}=${encodeURIComponent(params[key])}`;
+    }
+    return url;
+  }
 
   const EMERGENCY_FALLBACK = {
     hours: {
@@ -67,7 +79,7 @@
     let base = await loadDefaults();
     if (API_BASE) {
       try {
-        const res = await fetch(`${API_BASE}/content`, { cache: "no-store" });
+        const res = await fetch(apiUrl("content"), { cache: "no-store" });
         if (res.ok) base = { ...base, ...(await res.json()) };
       } catch (err) {
         console.warn("Content API unavailable, editing default content.", err);
@@ -85,14 +97,14 @@
   }
 
   /* Uploads a data-URL image to the Media function when the backend is
-     configured and the session is a real (non-demo) sign-in, returning a
-     real hosted URL. Falls back to the data URL itself for local preview
-     (no backend yet, or demo mode) so the admin panel still works fully
-     offline — this is the same fallback-first pattern used everywhere else. */
+     configured, returning a real hosted URL. Falls back to the data URL
+     itself when no backend is configured yet, so the admin panel still
+     works fully offline for local preview — same fallback-first pattern
+     used everywhere else. */
   async function uploadImage(dataUrl, filename, contentType) {
     if (!API_BASE || !currentUser || !currentUser.idToken) return dataUrl;
     try {
-      const res = await fetch(`${API_BASE}/media`, {
+      const res = await fetch(apiUrl("media"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -102,13 +114,9 @@
       });
       if (!res.ok) throw new Error("upload failed");
       const data = await res.json();
-      // The new consolidated function returns a relative /api/media?file=<name> path.
-      // We turn it into a fully-qualified URL so it works as an <img> src from any page.
-      if (data.url) {
-        const base = API_BASE.replace(/\/api$/, ""); // strip /api suffix from API base
-        return data.url.startsWith("http") ? data.url : `${base}${data.url}`;
-      }
-      return dataUrl;
+      // The function returns just a filename; we build the fetchable URL
+      // ourselves since we already know API_BASE (including the function key).
+      return data.filename ? apiUrl("media", { file: data.filename }) : dataUrl;
     } catch (err) {
       console.warn(
         "Media upload failed, falling back to inline image for local preview.",
@@ -131,7 +139,7 @@
         const headers = { "Content-Type": "application/json" };
         if (currentUser && currentUser.idToken)
           headers["Authorization"] = `Bearer ${currentUser.idToken}`;
-        await fetch(`${API_BASE}/content`, {
+        await fetch(apiUrl("content"), {
           method: "POST",
           headers,
           body: JSON.stringify(partial),
@@ -220,7 +228,6 @@
       email: payload.email,
       picture: payload.picture,
       idToken: response.credential,
-      demo: false,
     };
     sessionStorage.setItem("km_admin_session", JSON.stringify(user));
     enterAdmin(user);
@@ -264,9 +271,7 @@
     document.getElementById("loginScreen").style.display = "none";
     const app = document.getElementById("adminApp");
     app.style.display = "block";
-    document.getElementById("userName").textContent = user.demo
-      ? `${user.name} (demo)`
-      : user.name;
+    document.getElementById("userName").textContent = user.name;
     const photo = document.getElementById("userPhoto");
     if (user.picture) {
       photo.src = user.picture;
@@ -609,7 +614,7 @@
   async function fetchBackendAnalytics() {
     if (!API_BASE || !currentUser || !currentUser.idToken) return null;
     try {
-      const res = await fetch(`${API_BASE}/analytics`, {
+      const res = await fetch(apiUrl("analytics"), {
         headers: { Authorization: `Bearer ${currentUser.idToken}` },
       });
       if (!res.ok) return null;
@@ -848,17 +853,6 @@
     content = await loadContent();
     initTabs();
     document.getElementById("signOutBtn").addEventListener("click", signOut);
-    document.getElementById("demoModeBtn").addEventListener("click", () => {
-      const user = {
-        name: "Demo Admin",
-        email: "demo@local.preview",
-        picture: "",
-        idToken: null,
-        demo: true,
-      };
-      sessionStorage.setItem("km_admin_session", JSON.stringify(user));
-      enterAdmin(user);
-    });
 
     if (!restoreSession()) {
       initGoogleSignIn();

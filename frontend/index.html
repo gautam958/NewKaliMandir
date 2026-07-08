@@ -1,270 +1,571 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" data-lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>New Kali Mandir, Belabagan, Deoghar</title>
-<meta name="description" content="Official website of New Kali Mandir, Belabagan, Deoghar, Jharkhand — timings, puja schedule, gallery, and donations." />
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Tiro+Devanagari+Hindi:ital@0;1&family=Mukta:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
-<script>
-  // Site configuration — set once the Azure Functions backend is deployed.
-  // Until then the site runs fully on frontend/assets/default-content.json.
-  window.KALI_MANDIR_API_BASE = null; // e.g. "https://kalimandir-func.azurewebsites.net/api"
-</script>
-</head>
-<body>
-
-<!-- Top bar -->
-<header class="topbar">
-  <div class="brand">
-    <svg width="34" height="34" viewBox="0 0 40 40" fill="none">
-      <path d="M20 3C20 3 24 12 24 18C24 22 22 24 20 24C18 24 16 22 16 18C16 12 20 3 20 3Z" fill="#C9A24B"/>
-      <path d="M12 22C16 24 24 24 28 22C28 22 27 34 20 37C13 34 12 22 12 22Z" stroke="#C9A24B" stroke-width="1.3" fill="none"/>
-    </svg>
-    <div class="brand-text">
-      <span class="title-hi">नव काली मंदिर, बेलाबागान</span>
-      <span class="title-en">New Kali Mandir, Deoghar</span>
-    </div>
-  </div>
-  <div class="controls">
-    <div class="theme-switch" id="themeSwitch">
-      <button type="button" class="theme-btn" id="themeBtn" aria-label="Change theme" title="Change theme"></button>
-      <div class="theme-menu" id="themeMenu">
-        <button type="button" class="theme-option" data-theme-opt="dark"><span class="swatch" style="background:#0f0508;border-color:#c9a24b"></span>Kali Night</button>
-        <button type="button" class="theme-option" data-theme-opt="dusk"><span class="swatch" style="background:#2b1626;border-color:#d4a955"></span>Dusk</button>
-        <button type="button" class="theme-option" data-theme-opt="marigold"><span class="swatch" style="background:#fbf3e6;border-color:#b3122a"></span>Marigold</button>
-        <button type="button" class="theme-option" data-theme-opt="sandstone"><span class="swatch" style="background:#f3e4c8;border-color:#a8351e"></span>Sandstone</button>
-      </div>
-    </div>
-    <div class="lang-toggle" role="group" aria-label="Language toggle">
-      <button type="button" data-lang-btn="en" class="active">EN</button>
-      <button type="button" data-lang-btn="hi">हिं</button>
-    </div>
-  </div>
-</header>
-
-<!-- Scroll-spy vertical diya nav -->
-<nav class="diya-nav" id="diyaNav" aria-label="Section navigation">
-  <a href="#home" data-target="home" class="active"><span class="flame"></span><span class="label" lang-el="en">Home</span><span class="label" lang-el="hi">गृह</span></a>
-  <a href="#location" data-target="location"><span class="flame"></span><span class="label" lang-el="en">Location</span><span class="label" lang-el="hi">स्थान</span></a>
-  <a href="#hours" data-target="hours"><span class="flame"></span><span class="label" lang-el="en">Hours</span><span class="label" lang-el="hi">समय</span></a>
-  <a href="#gallery" data-target="gallery"><span class="flame"></span><span class="label" lang-el="en">Gallery</span><span class="label" lang-el="hi">गैलरी</span></a>
-  <a href="#schedule" data-target="schedule"><span class="flame"></span><span class="label" lang-el="en">Puja Schedule</span><span class="label" lang-el="hi">पूजा कैलेंडर</span></a>
-  <a href="#samagri" data-target="samagri"><span class="flame"></span><span class="label" lang-el="en">Samagri</span><span class="label" lang-el="hi">सामग्री</span></a>
-  <a href="#contact" data-target="contact"><span class="flame"></span><span class="label" lang-el="en">Contact</span><span class="label" lang-el="hi">संपर्क</span></a>
-  <a href="#donate" data-target="donate"><span class="flame"></span><span class="label" lang-el="en">Donate</span><span class="label" lang-el="hi">दान</span></a>
-</nav>
-
-<div class="page">
-
-  <!-- HOME -->
-  <section class="hero" id="home">
-    <span class="eyebrow" lang-el="en">Belabagan · Deoghar · Jharkhand</span>
-    <span class="eyebrow" lang-el="hi">बेलाबागान · देवघर · झारखंड</span>
-    <h1 class="display">
-      <span lang-el="en">Where the flame of <span class="accent">Ma Kali</span><br>has never gone out</span>
-      <span lang-el="hi">जहाँ <span class="accent">माँ काली</span> की ज्योति<br>कभी नहीं बुझी</span>
-    </h1>
-    <p class="sub" lang-el="en">New Kali Mandir has stood at the heart of Belabagan for generations — a place of daily aarti, seasonal puja, and quiet refuge for every devotee who walks through its gate.</p>
-    <p class="sub" lang-el="hi">नव काली मंदिर पीढ़ियों से बेलाबागान के केंद्र में स्थापित है — नित्य आरती, ऋतु पूजा और हर भक्त के लिए शांति का आश्रय स्थल।</p>
-    <div class="cta-row">
-      <a href="#hours" class="btn btn-primary"><span lang-el="en">Visiting Hours</span><span lang-el="hi">दर्शन समय</span></a>
-      <a href="#donate" class="btn btn-ghost"><span lang-el="en">Support the Temple</span><span lang-el="hi">मंदिर सेवा में सहयोग</span></a>
-    </div>
-
-    <div class="slider-strip" aria-hidden="true">
-      <div class="slider-track" id="sliderTrack"></div>
-    </div>
-  </section>
-
-  <div class="toran" aria-hidden="true">
-    <div class="rule"></div>
-    <svg width="46" height="26" viewBox="0 0 46 26" fill="none"><path d="M2 2C2 14 10 24 23 24C36 24 44 14 44 2" stroke="#C9A24B" stroke-width="1.3"/><circle cx="23" cy="22" r="2.4" fill="#C8203F"/></svg>
-    <div class="rule"></div>
-  </div>
-
-  <!-- LOCATION -->
-  <section class="section" id="location">
-    <div class="sec-head">
-      <span class="eyebrow" lang-el="en">Find Us</span>
-      <span class="eyebrow" lang-el="hi">हमें खोजें</span>
-      <h2 class="display" lang-el="en">Location</h2>
-      <h2 class="display" lang-el="hi">स्थान</h2>
-    </div>
-    <div class="map-frame">
-      <iframe
-        src="https://www.google.com/maps?q=New+Kali+Mandir,+Belabagan,+Deoghar,+Jharkhand&output=embed"
-        loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Temple location map"></iframe>
-    </div>
-    <div class="addr-card">
-      <span lang-el="en">N.M Road, Belabagan, Deoghar, Jharkhand, India – 814112</span>
-      <span lang-el="hi">एन.एम रोड, बेलाबागान, देवघर, झारखंड, भारत – 814112</span>
-      <a class="btn btn-ghost" style="margin-left:auto; flex-shrink:0;" target="_blank" rel="noopener"
-         href="https://www.google.com/maps/place/New+Kali+Mandir/@24.4954472,86.6730384,1040m/data=!3m2!1e3!4b1!4m6!3m5!1s0x39f117b02b8d19e9:0x7ff673a9ff7c0ada!8m2!3d24.4954472!4d86.6756133!16s%2Fg%2F11fhwwjswz">
-        <span lang-el="en">Get Directions</span><span lang-el="hi">दिशा-निर्देश पाएं</span>
-      </a>
-    </div>
-  </section>
-
-  <div class="toran" aria-hidden="true"><div class="rule"></div><svg width="46" height="26" viewBox="0 0 46 26" fill="none"><path d="M2 2C2 14 10 24 23 24C36 24 44 14 44 2" stroke="#C9A24B" stroke-width="1.3"/><circle cx="23" cy="22" r="2.4" fill="#C8203F"/></svg><div class="rule"></div></div>
-
-  <!-- VISITING HOURS -->
-  <section class="section" id="hours">
-    <div class="sec-head">
-      <span class="eyebrow" lang-el="en">Darshan Timings</span>
-      <span class="eyebrow" lang-el="hi">दर्शन समय</span>
-      <h2 class="display" lang-el="en">Visiting Hours</h2>
-      <h2 class="display" lang-el="hi">दर्शन का समय</h2>
-    </div>
-    <div class="hours-grid" id="hoursGrid"></div>
-    <div class="card" style="margin-top:18px; padding:20px 26px;" id="hoursNotice">
-      <span class="eyebrow" lang-el="en">Festival Notice</span>
-      <span class="eyebrow" lang-el="hi">पर्व सूचना</span>
-      <p style="margin:8px 0 0; color:var(--muted);" lang-el="en"></p>
-      <p style="margin:8px 0 0; color:var(--muted);" lang-el="hi"></p>
-    </div>
-  </section>
-
-  <div class="toran" aria-hidden="true"><div class="rule"></div><svg width="46" height="26" viewBox="0 0 46 26" fill="none"><path d="M2 2C2 14 10 24 23 24C36 24 44 14 44 2" stroke="#C9A24B" stroke-width="1.3"/><circle cx="23" cy="22" r="2.4" fill="#C8203F"/></svg><div class="rule"></div></div>
-
-  <!-- GALLERY -->
-  <section class="section" id="gallery">
-    <div class="sec-head">
-      <span class="eyebrow" lang-el="en">Glimpses</span>
-      <span class="eyebrow" lang-el="hi">झलकियाँ</span>
-      <h2 class="display" lang-el="en">Photo Gallery</h2>
-      <h2 class="display" lang-el="hi">फोटो गैलरी</h2>
-      <p lang-el="en">Photos are managed by the temple administrator and update automatically here.</p>
-      <p lang-el="hi">फोटो मंदिर प्रशासक द्वारा प्रबंधित होते हैं और यहाँ स्वतः अपडेट होते हैं।</p>
-    </div>
-    <div class="gallery-grid" id="galleryGrid"></div>
-  </section>
-
-  <div class="toran" aria-hidden="true"><div class="rule"></div><svg width="46" height="26" viewBox="0 0 46 26" fill="none"><path d="M2 2C2 14 10 24 23 24C36 24 44 14 44 2" stroke="#C9A24B" stroke-width="1.3"/><circle cx="23" cy="22" r="2.4" fill="#C8203F"/></svg><div class="rule"></div></div>
-
-  <!-- PUJA SCHEDULE -->
-  <section class="section" id="schedule">
-    <div class="sec-head">
-      <span class="eyebrow" lang-el="en">The Year Ahead</span>
-      <span class="eyebrow" lang-el="hi">वर्ष भर के पर्व</span>
-      <h2 class="display" lang-el="en">Yearly Puja Schedule</h2>
-      <h2 class="display" lang-el="hi">वार्षिक पूजा कैलेंडर</h2>
-    </div>
-    <div class="timeline" id="scheduleTimeline"></div>
-  </section>
-
-  <div class="toran" aria-hidden="true"><div class="rule"></div><svg width="46" height="26" viewBox="0 0 46 26" fill="none"><path d="M2 2C2 14 10 24 23 24C36 24 44 14 44 2" stroke="#C9A24B" stroke-width="1.3"/><circle cx="23" cy="22" r="2.4" fill="#C8203F"/></svg><div class="rule"></div></div>
-
-  <!-- SAMAGRI -->
-  <section class="section" id="samagri">
-    <div class="sec-head">
-      <span class="eyebrow" lang-el="en">Come Prepared</span>
-      <span class="eyebrow" lang-el="hi">पूजा की तैयारी</span>
-      <h2 class="display" lang-el="en">Puja Samagri Lists</h2>
-      <h2 class="display" lang-el="hi">पूजा सामग्री सूचियाँ</h2>
-      <p lang-el="en">Tick off items as you pack them. Download or print any list for offline use.</p>
-      <p lang-el="hi">सामान पैक करते समय सूची जाँच लें। ऑफ़लाइन उपयोग हेतु किसी भी सूची को डाउनलोड या प्रिंट करें।</p>
-    </div>
-    <div id="samagriListsContainer" class="samagri-lists"></div>
-  </section>
-
-  <div class="toran" aria-hidden="true"><div class="rule"></div><svg width="46" height="26" viewBox="0 0 46 26" fill="none"><path d="M2 2C2 14 10 24 23 24C36 24 44 14 44 2" stroke="#C9A24B" stroke-width="1.3"/><circle cx="23" cy="22" r="2.4" fill="#C8203F"/></svg><div class="rule"></div></div>
-
-  <!-- CONTACT -->
-  <section class="section" id="contact">
-    <div class="sec-head">
-      <span class="eyebrow" lang-el="en">Reach Us</span>
-      <span class="eyebrow" lang-el="hi">संपर्क करें</span>
-      <h2 class="display" lang-el="en">Contact Us</h2>
-      <h2 class="display" lang-el="hi">संपर्क करें</h2>
-    </div>
-    <div class="contact-grid">
-      <div class="contact-card">
-        <div class="contact-row">
-          <div>
-            <div class="k" lang-el="en">Address</div>
-            <div class="k" lang-el="hi">पता</div>
-            <div class="v">N.M Road, Belabagan, Deoghar, Jharkhand, India – 814112</div>
-          </div>
-        </div>
-        <div class="contact-row">
-          <div>
-            <div class="k" lang-el="en">Mobile</div>
-            <div class="k" lang-el="hi">मोबाइल</div>
-            <div class="v"><a href="tel:+919431777784">+91-9431777784</a></div>
-          </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>New Kali Mandir, Belabagan, Deoghar</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+    <link rel="manifest" href="site.webmanifest" />
+    <meta
+      name="description"
+      content="Official website of New Kali Mandir, Belabagan, Deoghar, Jharkhand — timings, puja schedule, gallery, and donations."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Tiro+Devanagari+Hindi:ital@0;1&family=Mukta:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script>
+      // Site configuration — set once the Azure Functions backend is deployed.
+      // Until then the site runs fully on frontend/assets/default-content.json.
+      window.KALI_MANDIR_API_BASE = null; // e.g. "https://kalimandir-func.azurewebsites.net/api"
+    </script>
+  </head>
+  <body>
+    <!-- Top bar -->
+    <header class="topbar">
+      <div class="brand">
+        <svg width="34" height="34" viewBox="0 0 40 40" fill="none">
+          <path
+            d="M20 3C20 3 24 12 24 18C24 22 22 24 20 24C18 24 16 22 16 18C16 12 20 3 20 3Z"
+            fill="#C9A24B"
+          />
+          <path
+            d="M12 22C16 24 24 24 28 22C28 22 27 34 20 37C13 34 12 22 12 22Z"
+            stroke="#C9A24B"
+            stroke-width="1.3"
+            fill="none"
+          />
+        </svg>
+        <div class="brand-text">
+          <span class="title-hi">नया काली मंदिर, बेलाबागान</span>
+          <span class="title-en">New Kali Mandir, Deoghar</span>
         </div>
       </div>
-      <div class="contact-card">
-        <div class="k" lang-el="en" style="margin-bottom:8px;">A Note From the Temple</div>
-        <div class="k" lang-el="hi" style="margin-bottom:8px;">मंदिर की ओर से</div>
-        <p style="color:var(--muted); margin:0;" lang-el="en">For group visits, priest bookings, or puja arrangements, please call ahead so we can welcome you properly.</p>
-        <p style="color:var(--muted); margin:0;" lang-el="hi">सामूहिक दर्शन, पुरोहित बुकिंग या पूजा व्यवस्था हेतु कृपया पहले से कॉल करें ताकि हम आपका उचित स्वागत कर सकें।</p>
+      <div class="controls">
+        <div class="theme-switch" id="themeSwitch">
+          <button
+            type="button"
+            class="theme-btn"
+            id="themeBtn"
+            aria-label="Change theme"
+            title="Change theme"
+          ></button>
+          <div class="theme-menu" id="themeMenu">
+            <button type="button" class="theme-option" data-theme-opt="dark">
+              <span
+                class="swatch"
+                style="background: #0f0508; border-color: #c9a24b"
+              ></span
+              >Kali Night
+            </button>
+            <button type="button" class="theme-option" data-theme-opt="dusk">
+              <span
+                class="swatch"
+                style="background: #2b1626; border-color: #d4a955"
+              ></span
+              >Dusk
+            </button>
+            <button
+              type="button"
+              class="theme-option"
+              data-theme-opt="marigold"
+            >
+              <span
+                class="swatch"
+                style="background: #fbf3e6; border-color: #b3122a"
+              ></span
+              >Marigold
+            </button>
+            <button
+              type="button"
+              class="theme-option"
+              data-theme-opt="sandstone"
+            >
+              <span
+                class="swatch"
+                style="background: #f3e4c8; border-color: #a8351e"
+              ></span
+              >Sandstone
+            </button>
+          </div>
+        </div>
+        <div class="lang-toggle" role="group" aria-label="Language toggle">
+          <button type="button" data-lang-btn="en" class="active">EN</button>
+          <button type="button" data-lang-btn="hi">हिं</button>
+        </div>
       </div>
-    </div>
-    <div class="custodians-head">
-      <span class="eyebrow" lang-el="en">Temple Committee</span>
-      <span class="eyebrow" lang-el="hi">मंदिर समिति</span>
-    </div>
-    <div id="custodiansGrid" class="custodians-grid"></div>
-  </section>
+    </header>
 
-  <div class="toran" aria-hidden="true"><div class="rule"></div><svg width="46" height="26" viewBox="0 0 46 26" fill="none"><path d="M2 2C2 14 10 24 23 24C36 24 44 14 44 2" stroke="#C9A24B" stroke-width="1.3"/><circle cx="23" cy="22" r="2.4" fill="#C8203F"/></svg><div class="rule"></div></div>
+    <!-- Scroll-spy vertical diya nav -->
+    <nav class="diya-nav" id="diyaNav" aria-label="Section navigation">
+      <a href="#home" data-target="home" class="active"
+        ><span class="flame"></span><span class="label" lang-el="en">Home</span
+        ><span class="label" lang-el="hi">गृह</span></a
+      >
+      <a href="#location" data-target="location"
+        ><span class="flame"></span
+        ><span class="label" lang-el="en">Location</span
+        ><span class="label" lang-el="hi">स्थान</span></a
+      >
+      <a href="#hours" data-target="hours"
+        ><span class="flame"></span><span class="label" lang-el="en">Hours</span
+        ><span class="label" lang-el="hi">समय</span></a
+      >
+      <a href="#gallery" data-target="gallery"
+        ><span class="flame"></span
+        ><span class="label" lang-el="en">Gallery</span
+        ><span class="label" lang-el="hi">गैलरी</span></a
+      >
+      <a href="#schedule" data-target="schedule"
+        ><span class="flame"></span
+        ><span class="label" lang-el="en">Puja Schedule</span
+        ><span class="label" lang-el="hi">पूजा कैलेंडर</span></a
+      >
+      <a href="#samagri" data-target="samagri"
+        ><span class="flame"></span
+        ><span class="label" lang-el="en">Samagri</span
+        ><span class="label" lang-el="hi">सामग्री</span></a
+      >
+      <a href="#contact" data-target="contact"
+        ><span class="flame"></span
+        ><span class="label" lang-el="en">Contact</span
+        ><span class="label" lang-el="hi">संपर्क</span></a
+      >
+      <a href="#donate" data-target="donate"
+        ><span class="flame"></span
+        ><span class="label" lang-el="en">Donate</span
+        ><span class="label" lang-el="hi">दान</span></a
+      >
+    </nav>
 
-  <!-- DONATIONS -->
-  <section class="section" id="donate">
-    <div class="sec-head">
-      <span class="eyebrow" lang-el="en">Seva</span>
-      <span class="eyebrow" lang-el="hi">सेवा</span>
-      <h2 class="display" lang-el="en">Donations</h2>
-      <h2 class="display" lang-el="hi">दान</h2>
-      <p lang-el="en">Your contribution supports daily worship, temple upkeep, and festival arrangements.</p>
-      <p lang-el="hi">आपका योगदान नित्य पूजा, मंदिर रखरखाव और पर्व आयोजनों में सहायक होता है।</p>
-    </div>
-    <div class="donate-grid">
-      <div class="qr-box">
-        <svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#F3E9E1"/><g fill="#0F0508">
-          <rect x="8" y="8" width="22" height="22"/><rect x="70" y="8" width="22" height="22"/><rect x="8" y="70" width="22" height="22"/>
-          <rect x="14" y="14" width="10" height="10" fill="#F3E9E1"/><rect x="76" y="14" width="10" height="10" fill="#F3E9E1"/><rect x="14" y="76" width="10" height="10" fill="#F3E9E1"/>
-          <rect x="40" y="8" width="6" height="6"/><rect x="52" y="8" width="6" height="6"/><rect x="40" y="20" width="6" height="6"/>
-          <rect x="8" y="40" width="6" height="6"/><rect x="20" y="40" width="6" height="6"/><rect x="8" y="52" width="6" height="6"/>
-          <rect x="40" y="40" width="6" height="6"/><rect x="52" y="40" width="6" height="6"/><rect x="40" y="52" width="6" height="6"/><rect x="52" y="52" width="6" height="6"/>
-          <rect x="70" y="40" width="6" height="6"/><rect x="82" y="40" width="6" height="6"/><rect x="70" y="52" width="6" height="6"/>
-          <rect x="40" y="70" width="6" height="6"/><rect x="52" y="82" width="6" height="6"/><rect x="70" y="70" width="6" height="6"/><rect x="82" y="82" width="6" height="6"/>
-        </g></svg>
-        <span class="eyebrow" lang-el="en">Scan to donate (UPI)</span>
-        <span class="eyebrow" lang-el="hi">दान हेतु स्कैन करें (UPI)</span>
-        <span style="font-size:0.8rem; color:var(--muted);" lang-el="en">QR set by temple admin — placeholder shown</span>
-        <span style="font-size:0.8rem; color:var(--muted);" lang-el="hi">मंदिर प्रशासक द्वारा सेट — नमूना दिखाया गया है</span>
+    <div class="page">
+      <!-- HOME -->
+      <section class="hero" id="home">
+        <span class="eyebrow" lang-el="en"
+          >Belabagan · Deoghar · Jharkhand</span
+        >
+        <span class="eyebrow" lang-el="hi">बेलाबागान · देवघर · झारखंड</span>
+        <h1 class="display">
+          <span lang-el="en"
+            >Where the flame of <span class="accent">Ma Kali</span><br />has
+            never gone out</span
+          >
+          <span lang-el="hi"
+            >जहाँ <span class="accent">माँ काली</span> की ज्योति<br />कभी नहीं
+            बुझी</span
+          >
+        </h1>
+        <p class="sub" lang-el="en">
+          New Kali Mandir has stood at the heart of Belabagan for generations —
+          a place of daily aarti, seasonal puja, and quiet refuge for every
+          devotee who walks through its gate.
+        </p>
+        <p class="sub" lang-el="hi">
+          नव काली मंदिर पीढ़ियों से बेलाबागान के केंद्र में स्थापित है — नित्य
+          आरती, ऋतु पूजा और हर भक्त के लिए शांति का आश्रय स्थल।
+        </p>
+        <div class="cta-row">
+          <a href="#hours" class="btn btn-primary"
+            ><span lang-el="en">Visiting Hours</span
+            ><span lang-el="hi">दर्शन समय</span></a
+          >
+          <a href="#donate" class="btn btn-ghost"
+            ><span lang-el="en">Support the Temple</span
+            ><span lang-el="hi">मंदिर सेवा में सहयोग</span></a
+          >
+        </div>
+
+        <div class="slider-strip" aria-hidden="true">
+          <div class="slider-track" id="sliderTrack"></div>
+        </div>
+      </section>
+
+      <div class="toran" aria-hidden="true">
+        <div class="rule"></div>
+        <svg width="46" height="26" viewBox="0 0 46 26" fill="none">
+          <path
+            d="M2 2C2 14 10 24 23 24C36 24 44 14 44 2"
+            stroke="#C9A24B"
+            stroke-width="1.3"
+          />
+          <circle cx="23" cy="22" r="2.4" fill="#C8203F" />
+        </svg>
+        <div class="rule"></div>
       </div>
-      <div class="contact-card">
-        <div class="contact-row"><div><div class="k" lang-el="en">Bank Transfer</div><div class="k" lang-el="hi">बैंक हस्तांतरण</div><div class="v" id="bankDetails">Details available on request — call +91-9431777784</div></div></div>
-        <div class="contact-row"><div><div class="k" lang-el="en">In Person</div><div class="k" lang-el="hi">प्रत्यक्ष दान</div><div class="v" lang-el="en">Donation box (daan-petti) available at the sanctum entrance.</div><div class="v" lang-el="hi">गर्भगृह के प्रवेश द्वार पर दान पेटी उपलब्ध है।</div></div></div>
+
+      <!-- LOCATION -->
+      <section class="section" id="location">
+        <div class="sec-head">
+          <span class="eyebrow" lang-el="en">Find Us</span>
+          <span class="eyebrow" lang-el="hi">हमें खोजें</span>
+          <h2 class="display" lang-el="en">Location</h2>
+          <h2 class="display" lang-el="hi">स्थान</h2>
+        </div>
+        <div class="map-frame">
+          <iframe
+            src="https://www.google.com/maps?q=New+Kali+Mandir,+Belabagan,+Deoghar,+Jharkhand&output=embed"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            title="Temple location map"
+          ></iframe>
+        </div>
+        <div class="addr-card">
+          <span lang-el="en"
+            >N.M Road, Belabagan, Deoghar, Jharkhand, India – 814112</span
+          >
+          <span lang-el="hi"
+            >एन.एम रोड, बेलाबागान, देवघर, झारखंड, भारत – 814112</span
+          >
+          <a
+            class="btn btn-ghost"
+            style="margin-left: auto; flex-shrink: 0"
+            target="_blank"
+            rel="noopener"
+            href="https://www.google.com/maps/place/New+Kali+Mandir/@24.4954472,86.6730384,1040m/data=!3m2!1e3!4b1!4m6!3m5!1s0x39f117b02b8d19e9:0x7ff673a9ff7c0ada!8m2!3d24.4954472!4d86.6756133!16s%2Fg%2F11fhwwjswz"
+          >
+            <span lang-el="en">Get Directions</span
+            ><span lang-el="hi">दिशा-निर्देश पाएं</span>
+          </a>
+        </div>
+      </section>
+
+      <div class="toran" aria-hidden="true">
+        <div class="rule"></div>
+        <svg width="46" height="26" viewBox="0 0 46 26" fill="none">
+          <path
+            d="M2 2C2 14 10 24 23 24C36 24 44 14 44 2"
+            stroke="#C9A24B"
+            stroke-width="1.3"
+          />
+          <circle cx="23" cy="22" r="2.4" fill="#C8203F" />
+        </svg>
+        <div class="rule"></div>
       </div>
+
+      <!-- VISITING HOURS -->
+      <section class="section" id="hours">
+        <div class="sec-head">
+          <span class="eyebrow" lang-el="en">Darshan Timings</span>
+          <span class="eyebrow" lang-el="hi">दर्शन समय</span>
+          <h2 class="display" lang-el="en">Visiting Hours</h2>
+          <h2 class="display" lang-el="hi">दर्शन का समय</h2>
+        </div>
+        <div class="hours-grid" id="hoursGrid"></div>
+        <div
+          class="card"
+          style="margin-top: 18px; padding: 20px 26px"
+          id="hoursNotice"
+        >
+          <span class="eyebrow" lang-el="en">Festival Notice</span>
+          <span class="eyebrow" lang-el="hi">पर्व सूचना</span>
+          <p style="margin: 8px 0 0; color: var(--muted)" lang-el="en"></p>
+          <p style="margin: 8px 0 0; color: var(--muted)" lang-el="hi"></p>
+        </div>
+      </section>
+
+      <div class="toran" aria-hidden="true">
+        <div class="rule"></div>
+        <svg width="46" height="26" viewBox="0 0 46 26" fill="none">
+          <path
+            d="M2 2C2 14 10 24 23 24C36 24 44 14 44 2"
+            stroke="#C9A24B"
+            stroke-width="1.3"
+          />
+          <circle cx="23" cy="22" r="2.4" fill="#C8203F" />
+        </svg>
+        <div class="rule"></div>
+      </div>
+
+      <!-- GALLERY -->
+      <section class="section" id="gallery">
+        <div class="sec-head">
+          <span class="eyebrow" lang-el="en">Glimpses</span>
+          <span class="eyebrow" lang-el="hi">झलकियाँ</span>
+          <h2 class="display" lang-el="en">Photo Gallery</h2>
+          <h2 class="display" lang-el="hi">फोटो गैलरी</h2>
+          <p lang-el="en">
+            Photos are managed by the temple administrator and update
+            automatically here.
+          </p>
+          <p lang-el="hi">
+            फोटो मंदिर प्रशासक द्वारा प्रबंधित होते हैं और यहाँ स्वतः अपडेट होते
+            हैं।
+          </p>
+        </div>
+        <div class="gallery-grid" id="galleryGrid"></div>
+      </section>
+
+      <div class="toran" aria-hidden="true">
+        <div class="rule"></div>
+        <svg width="46" height="26" viewBox="0 0 46 26" fill="none">
+          <path
+            d="M2 2C2 14 10 24 23 24C36 24 44 14 44 2"
+            stroke="#C9A24B"
+            stroke-width="1.3"
+          />
+          <circle cx="23" cy="22" r="2.4" fill="#C8203F" />
+        </svg>
+        <div class="rule"></div>
+      </div>
+
+      <!-- PUJA SCHEDULE -->
+      <section class="section" id="schedule">
+        <div class="sec-head">
+          <span class="eyebrow" lang-el="en">The Year Ahead</span>
+          <span class="eyebrow" lang-el="hi">वर्ष भर के पर्व</span>
+          <h2 class="display" lang-el="en">Yearly Puja Schedule</h2>
+          <h2 class="display" lang-el="hi">वार्षिक पूजा कैलेंडर</h2>
+        </div>
+        <div class="timeline" id="scheduleTimeline"></div>
+      </section>
+
+      <div class="toran" aria-hidden="true">
+        <div class="rule"></div>
+        <svg width="46" height="26" viewBox="0 0 46 26" fill="none">
+          <path
+            d="M2 2C2 14 10 24 23 24C36 24 44 14 44 2"
+            stroke="#C9A24B"
+            stroke-width="1.3"
+          />
+          <circle cx="23" cy="22" r="2.4" fill="#C8203F" />
+        </svg>
+        <div class="rule"></div>
+      </div>
+
+      <!-- SAMAGRI -->
+      <section class="section" id="samagri">
+        <div class="sec-head">
+          <span class="eyebrow" lang-el="en">Come Prepared</span>
+          <span class="eyebrow" lang-el="hi">पूजा की तैयारी</span>
+          <h2 class="display" lang-el="en">Puja Samagri Lists</h2>
+          <h2 class="display" lang-el="hi">पूजा सामग्री सूचियाँ</h2>
+          <p lang-el="en">
+            Tick off items as you pack them. Download or print any list for
+            offline use.
+          </p>
+          <p lang-el="hi">
+            सामान पैक करते समय सूची जाँच लें। ऑफ़लाइन उपयोग हेतु किसी भी सूची को
+            डाउनलोड या प्रिंट करें।
+          </p>
+        </div>
+        <div id="samagriListsContainer" class="samagri-lists"></div>
+      </section>
+
+      <div class="toran" aria-hidden="true">
+        <div class="rule"></div>
+        <svg width="46" height="26" viewBox="0 0 46 26" fill="none">
+          <path
+            d="M2 2C2 14 10 24 23 24C36 24 44 14 44 2"
+            stroke="#C9A24B"
+            stroke-width="1.3"
+          />
+          <circle cx="23" cy="22" r="2.4" fill="#C8203F" />
+        </svg>
+        <div class="rule"></div>
+      </div>
+
+      <!-- CONTACT -->
+      <section class="section" id="contact">
+        <div class="sec-head">
+          <span class="eyebrow" lang-el="en">Reach Us</span>
+          <span class="eyebrow" lang-el="hi">संपर्क करें</span>
+          <h2 class="display" lang-el="en">Contact Us</h2>
+          <h2 class="display" lang-el="hi">संपर्क करें</h2>
+        </div>
+        <div class="contact-grid">
+          <div class="contact-card">
+            <div class="contact-row">
+              <div>
+                <div class="k" lang-el="en">Address</div>
+                <div class="k" lang-el="hi">पता</div>
+                <div class="v">
+                  N.M Road, Belabagan, Deoghar, Jharkhand, India – 814112
+                </div>
+              </div>
+            </div>
+            <div class="contact-row">
+              <div>
+                <div class="k" lang-el="en">Mobile</div>
+                <div class="k" lang-el="hi">मोबाइल</div>
+                <div class="v">
+                  <a href="tel:+919431777784">+91-9431777784</a>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="contact-card">
+            <div class="k" lang-el="en" style="margin-bottom: 8px">
+              A Note From the Temple
+            </div>
+            <div class="k" lang-el="hi" style="margin-bottom: 8px">
+              मंदिर की ओर से
+            </div>
+            <p style="color: var(--muted); margin: 0" lang-el="en">
+              For group visits, priest bookings, or puja arrangements, please
+              call ahead so we can welcome you properly.
+            </p>
+            <p style="color: var(--muted); margin: 0" lang-el="hi">
+              सामूहिक दर्शन, पुरोहित बुकिंग या पूजा व्यवस्था हेतु कृपया पहले से
+              कॉल करें ताकि हम आपका उचित स्वागत कर सकें।
+            </p>
+          </div>
+        </div>
+        <div class="custodians-head">
+          <span class="eyebrow" lang-el="en">Temple Committee</span>
+          <span class="eyebrow" lang-el="hi">मंदिर समिति</span>
+        </div>
+        <div id="custodiansGrid" class="custodians-grid"></div>
+      </section>
+
+      <div class="toran" aria-hidden="true">
+        <div class="rule"></div>
+        <svg width="46" height="26" viewBox="0 0 46 26" fill="none">
+          <path
+            d="M2 2C2 14 10 24 23 24C36 24 44 14 44 2"
+            stroke="#C9A24B"
+            stroke-width="1.3"
+          />
+          <circle cx="23" cy="22" r="2.4" fill="#C8203F" />
+        </svg>
+        <div class="rule"></div>
+      </div>
+
+      <!-- DONATIONS -->
+      <section class="section" id="donate">
+        <div class="sec-head">
+          <span class="eyebrow" lang-el="en">Seva</span>
+          <span class="eyebrow" lang-el="hi">सेवा</span>
+          <h2 class="display" lang-el="en">Donations</h2>
+          <h2 class="display" lang-el="hi">दान</h2>
+          <p lang-el="en">
+            Your contribution supports daily worship, temple upkeep, and
+            festival arrangements.
+          </p>
+          <p lang-el="hi">
+            आपका योगदान नित्य पूजा, मंदिर रखरखाव और पर्व आयोजनों में सहायक होता
+            है।
+          </p>
+        </div>
+        <div class="donate-grid">
+          <div class="qr-box">
+            <svg viewBox="0 0 100 100">
+              <rect width="100" height="100" fill="#F3E9E1" />
+              <g fill="#0F0508">
+                <rect x="8" y="8" width="22" height="22" />
+                <rect x="70" y="8" width="22" height="22" />
+                <rect x="8" y="70" width="22" height="22" />
+                <rect x="14" y="14" width="10" height="10" fill="#F3E9E1" />
+                <rect x="76" y="14" width="10" height="10" fill="#F3E9E1" />
+                <rect x="14" y="76" width="10" height="10" fill="#F3E9E1" />
+                <rect x="40" y="8" width="6" height="6" />
+                <rect x="52" y="8" width="6" height="6" />
+                <rect x="40" y="20" width="6" height="6" />
+                <rect x="8" y="40" width="6" height="6" />
+                <rect x="20" y="40" width="6" height="6" />
+                <rect x="8" y="52" width="6" height="6" />
+                <rect x="40" y="40" width="6" height="6" />
+                <rect x="52" y="40" width="6" height="6" />
+                <rect x="40" y="52" width="6" height="6" />
+                <rect x="52" y="52" width="6" height="6" />
+                <rect x="70" y="40" width="6" height="6" />
+                <rect x="82" y="40" width="6" height="6" />
+                <rect x="70" y="52" width="6" height="6" />
+                <rect x="40" y="70" width="6" height="6" />
+                <rect x="52" y="82" width="6" height="6" />
+                <rect x="70" y="70" width="6" height="6" />
+                <rect x="82" y="82" width="6" height="6" />
+              </g>
+            </svg>
+            <span class="eyebrow" lang-el="en">Scan to donate (UPI)</span>
+            <span class="eyebrow" lang-el="hi">दान हेतु स्कैन करें (UPI)</span>
+            <span style="font-size: 0.8rem; color: var(--muted)" lang-el="en"
+              >QR set by temple admin — placeholder shown</span
+            >
+            <span style="font-size: 0.8rem; color: var(--muted)" lang-el="hi"
+              >मंदिर प्रशासक द्वारा सेट — नमूना दिखाया गया है</span
+            >
+          </div>
+          <div class="contact-card">
+            <div class="contact-row">
+              <div>
+                <div class="k" lang-el="en">Bank Transfer</div>
+                <div class="k" lang-el="hi">बैंक हस्तांतरण</div>
+                <div class="v" id="bankDetails">
+                  Details available on request — call +91-9431777784
+                </div>
+              </div>
+            </div>
+            <div class="contact-row">
+              <div>
+                <div class="k" lang-el="en">In Person</div>
+                <div class="k" lang-el="hi">प्रत्यक्ष दान</div>
+                <div class="v" lang-el="en">
+                  Donation box (daan-petti) available at the sanctum entrance.
+                </div>
+                <div class="v" lang-el="hi">
+                  गर्भगृह के प्रवेश द्वार पर दान पेटी उपलब्ध है।
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="site-footer">
+        <p lang-el="en">
+          🔥 New Kali Mandir, Belabagan, Deoghar &nbsp;·&nbsp; Built with
+          devotion
+        </p>
+        <p lang-el="hi">
+          🔥 नव काली मंदिर, बेलाबागान, देवघर &nbsp;·&nbsp; श्रद्धा से निर्मित
+        </p>
+        <a class="admin-link" href="admin.html" lang-el="en">Admin Login</a>
+        <a class="admin-link" href="admin.html" lang-el="hi">प्रशासक लॉगिन</a>
+      </footer>
     </div>
-  </section>
 
-  <footer class="site-footer">
-    <p lang-el="en">🔥 New Kali Mandir, Belabagan, Deoghar &nbsp;·&nbsp; Built with devotion</p>
-    <p lang-el="hi">🔥 नव काली मंदिर, बेलाबागान, देवघर &nbsp;·&nbsp; श्रद्धा से निर्मित</p>
-    <a class="admin-link" href="admin.html" lang-el="en">Admin Login</a>
-    <a class="admin-link" href="admin.html" lang-el="hi">प्रशासक लॉगिन</a>
-  </footer>
+    <!-- Lightbox for gallery images -->
+    <div
+      class="lightbox"
+      id="lightbox"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Enlarged photo"
+    >
+      <button
+        type="button"
+        class="lightbox-close"
+        id="lightboxClose"
+        aria-label="Close"
+      >
+        &times;
+      </button>
+      <button
+        type="button"
+        class="lightbox-nav lightbox-prev"
+        id="lightboxPrev"
+        aria-label="Previous photo"
+      >
+        &#10094;
+      </button>
+      <img id="lightboxImg" src="" alt="" />
+      <button
+        type="button"
+        class="lightbox-nav lightbox-next"
+        id="lightboxNext"
+        aria-label="Next photo"
+      >
+        &#10095;
+      </button>
+      <div class="lightbox-cap" id="lightboxCap"></div>
+    </div>
 
-</div>
-
-<!-- Lightbox for gallery images -->
-<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Enlarged photo">
-  <button type="button" class="lightbox-close" id="lightboxClose" aria-label="Close">&times;</button>
-  <button type="button" class="lightbox-nav lightbox-prev" id="lightboxPrev" aria-label="Previous photo">&#10094;</button>
-  <img id="lightboxImg" src="" alt="">
-  <button type="button" class="lightbox-nav lightbox-next" id="lightboxNext" aria-label="Next photo">&#10095;</button>
-  <div class="lightbox-cap" id="lightboxCap"></div>
-</div>
-
-<script src="index.js"></script>
-</body>
+    <script src="index.js"></script>
+  </body>
 </html>

@@ -576,8 +576,6 @@ body.admin-body { overflow-x: hidden; }
 .admin-login-screen h1 { font-size: 1.9rem; }
 .admin-login-screen p { color: var(--muted); max-width: 42ch; }
 #googleSignInBtn { min-height: 42px; }
-.demo-link { font-size: 0.82rem; color: var(--muted); text-decoration: underline; cursor: pointer; background: none; border: none; }
-.demo-link:hover { color: var(--gold-bright); }
 .back-to-site { font-size: 0.8rem; color: var(--muted); border: 1px solid var(--line); border-radius: 20px; padding: 6px 14px; transition: all .2s ease; }
 .back-to-site:hover { color: var(--gold-bright); border-color: var(--gold); }
 .admin-topbar .brand { display: flex; align-items: center; gap: 14px; }

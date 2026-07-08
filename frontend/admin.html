@@ -4,6 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin — New Kali Mandir</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
     <meta name="robots" content="noindex, nofollow" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -15,14 +19,14 @@
     <script>
       // Site configuration — fill these in once the backend and Google OAuth
       // credentials exist (see README.md → "Deploy the backend" and
-      // "Set up Google Sign-In"). Until KM_GOOGLE_CLIENT_ID is set, only
-      // "Continue in demo mode" works on this page.
+      // "Set up Google Sign-In"). Until KM_GOOGLE_CLIENT_ID is set, the
+      // sign-in button below cannot render.
       window.KALI_MANDIR_API_BASE =
         "https://communication-fn.azurewebsites.net/api/KaliMandir?code=ybuYDQDF-EC2Fn0ez0UoT9bA0NCDprTb-rsvlb1GNHmVAzFuzGUvPw=="; // e.g. "https://kalimandir-func.azurewebsites.net/api"
       window.KM_GOOGLE_CLIENT_ID =
         "652232946588-qqja2g7d2qn2t930ine0p601b464obr9.apps.googleusercontent.com";
       window.KM_ADMIN_EMAILS = []; // optional, convenience-only allowlist for a friendlier error message —
-      // the real check happens server-side via ADMIN_EMAILS in the Function App
+      // the real check happens server-side via KL_ADMIN_EMAILS in the Function App
     </script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
@@ -52,9 +56,6 @@
         class="hint"
         style="color: #e08a8a; display: none"
       ></div>
-      <button class="demo-link" id="demoModeBtn" type="button">
-        Continue in demo mode (preview only, no real sign-in)
-      </button>
       <a href="index.html" class="back-to-site">&#8592; Back to Site</a>
     </div>
 

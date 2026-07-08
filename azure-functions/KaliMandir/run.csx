@@ -1,35 +1,56 @@
 /*
   Kali Mandir — Single Consolidated Azure Function
   =================================================
-  All three previous modules (Content, Media, Analytics) merged into one
-  .csx file following the pattern from the reference PratapTravels function.
+  All endpoints (Content, Media, Analytics) in one .csx file, dispatched by a
+  `type` QUERY PARAMETER rather than the URL path.
 
-  Routes (all under /api/):
-    GET  /api/content          — public: return site content JSON
-    POST /api/content          — admin: merge-update site content JSON
-    POST /api/media            — admin: save uploaded image to disk, return path
-    POST /api/analytics        — anonymous: log a page-view event
-    GET  /api/analytics        — admin: return per-day view counts (last 30 days)
+  Why query-param dispatch: this function is deployed on a shared, multi-project
+  Function App (communication-fn) behind a function-level key, so the frontend's
+  base URL already ends in `?code=...`. Path segments cannot be appended after a
+  query string (`{base}?code=X/content` is not a valid URL — `/content` would
+  just become part of the code value). Query params compose safely instead:
+  `{base}?code=X&type=content` is always valid regardless of what route Azure
+  assigned to this function. This mirrors the `?type=...` dispatch pattern in
+  the original PratapTravels reference function.
+
+  Routes (all hit the same URL, distinguished by `type` + HTTP method):
+    GET  ?type=content              — public: return site content JSON
+    POST ?type=content              — admin:  merge-update site content JSON
+    POST ?type=media                — admin:  save uploaded image to disk, return filename
+    GET  ?type=media&file=<name>    — public: serve a previously uploaded image
+    POST ?type=analytics            — anonymous: log a page-view event
+    GET  ?type=analytics            — admin:  return per-day view counts (last 30 days)
 
   Storage: all data lives as JSON files under %HOME%/data/ on the Function
-  App drive — exactly the same pattern as the PratapTravels reference function.
-  No Azure Blob Storage or Table Storage SDK dependencies required.
+  App drive (same pattern as the PratapTravels reference function). No Azure
+  Blob Storage or Table Storage SDK dependencies required.
 
-  Auth: admin endpoints require "Authorization: Bearer <Google ID token>".
+  Auth: admin actions require "Authorization: Bearer <Google ID token>".
   The token is verified against Google's tokeninfo endpoint and the caller's
-  email is checked against ADMIN_EMAILS (env var, comma-separated).
-  GOOGLE_CLIENT_ID (env var) must match the token's `aud` claim.
+  email is checked against KL_ADMIN_EMAILS. KL_GOOGLE_CLIENT_ID must match
+  the token's `aud` claim. This is the REAL security boundary for admin
+  actions — see the note on the function-level `code` key below.
 
-  Environment variables (set in Azure Portal → Function App → Configuration):
+  Environment variables (set in Azure Portal → Function App → Configuration).
+  Prefixed KL_ to avoid colliding with other functions/projects sharing this
+  same Function App:
     KL_GOOGLE_CLIENT_ID   — OAuth 2.0 Client ID (the public identifier, not the secret)
     KL_ADMIN_EMAILS       — comma-separated list of authorised admin email addresses
     KL_ALLOWED_ORIGIN     — your GitHub Pages origin, e.g. https://your-name.github.io
     KL_MEDIA_MAX_BYTES    — optional, per-file upload cap in bytes (default: 5242880 = 5 MB)
+
+  Note on the `?code=` function key: this gates whether the Function App will
+  execute AT ALL — it stops random internet scanners from invoking the
+  endpoint and running up compute costs. It is NOT a meaningful secret once
+  the site is live, since it's embedded directly in index.html/admin.html's
+  source (anyone can view-source and read it), exactly like the Google
+  Client ID. The real access-control boundary for admin actions is the
+  Google-token + KL_ADMIN_EMAILS check below, not this key.
 */
 
 #r "Microsoft.Azure.WebJobs.Extensions.Http"
 #r "Microsoft.AspNetCore.Http"
-#r "Microsoft.AspNetCore.Mvc"   
+#r "Microsoft.AspNetCore.Mvc"
 #r "Newtonsoft.Json"
 
 using System;
@@ -48,14 +69,13 @@ using Newtonsoft.Json.Linq;
 // ─────────────────────────────────────────────────────────────────────────────
 public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
 {
-    log.LogInformation($"KaliMandir function triggered. Method={req.Method} Path={req.Path}");
+    string type = req.Query["type"].FirstOrDefault() ?? "";
+    log.LogInformation($"KaliMandir function triggered. Method={req.Method} type={type}");
 
     // ── CORS ─────────────────────────────────────────────────────────────────
     string origin = req.Headers["Origin"].FirstOrDefault() ?? "";
     string allowedOrigin = Environment.GetEnvironmentVariable("KL_ALLOWED_ORIGIN") ?? "*";
 
-    // If the client's origin matches, echo it back; otherwise allow the
-    // configured ALLOWED_ORIGIN (or * for open access during local dev).
     string responseOrigin = (allowedOrigin == "*" || origin == allowedOrigin)
         ? (string.IsNullOrEmpty(origin) ? "*" : origin)
         : allowedOrigin;
@@ -66,7 +86,7 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
         return CorsResult(new NoContentResult(), responseOrigin);
     }
 
-    // Block non-matching origins (skip when ALLOWED_ORIGIN is "*").
+    // Block non-matching origins (skip when KL_ALLOWED_ORIGIN is "*").
     if (allowedOrigin != "*" && !string.IsNullOrEmpty(origin) && origin != allowedOrigin)
     {
         log.LogWarning($"Blocked request from unauthorized origin: {origin}");
@@ -77,25 +97,21 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
     string rootPath = Environment.GetEnvironmentVariable("HOME") ?? AppContext.BaseDirectory;
     string dataDir  = Path.Combine(rootPath, "data");
     Directory.CreateDirectory(dataDir);
-    Directory.CreateDirectory(Path.Combine(dataDir, "media")); // sub-folder for image files
+    Directory.CreateDirectory(Path.Combine(dataDir, "media"));
 
     string contentFilePath   = Path.Combine(dataDir, "content.json");
     string analyticsFilePath = Path.Combine(dataDir, "analytics.json");
 
-    // Seed empty files if they don't exist yet.
     if (!File.Exists(contentFilePath))   File.WriteAllText(contentFilePath,   "{}");
     if (!File.Exists(analyticsFilePath)) File.WriteAllText(analyticsFilePath, "{}");
 
-    // ── Route: which endpoint? ────────────────────────────────────────────────
-    string path = req.Path.Value?.TrimEnd('/').ToLowerInvariant() ?? "";
-
-    // Strip the /api prefix that Azure Functions adds automatically.
-    if (path.StartsWith("/api")) path = path.Substring(4);
+    bool isGet  = req.Method.Equals("GET",  StringComparison.OrdinalIgnoreCase);
+    bool isPost = req.Method.Equals("POST", StringComparison.OrdinalIgnoreCase);
 
     // ═════════════════════════════════════════════════════════════════════════
-    // GET /content — public, no auth
+    // type=content, GET — public, no auth
     // ═════════════════════════════════════════════════════════════════════════
-    if (path == "/content" && req.Method.Equals("GET", StringComparison.OrdinalIgnoreCase))
+    if (type == "content" && isGet)
     {
         string json = File.ReadAllText(contentFilePath);
         JObject content = string.IsNullOrWhiteSpace(json) ? new JObject() : JObject.Parse(json);
@@ -103,9 +119,9 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
     }
 
     // ═════════════════════════════════════════════════════════════════════════
-    // POST /content — admin only: partial merge-update of content.json
+    // type=content, POST — admin only: partial merge-update of content.json
     // ═════════════════════════════════════════════════════════════════════════
-    if (path == "/content" && req.Method.Equals("POST", StringComparison.OrdinalIgnoreCase))
+    if (type == "content" && isPost)
     {
         var auth = await VerifyAdminAsync(req, log);
         if (!auth.ok)
@@ -116,10 +132,6 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
         try   { partial = JObject.Parse(requestBody); }
         catch { return CorsResult(new BadRequestObjectResult(new { error = "Body must be valid JSON." }), responseOrigin); }
 
-        // Read → merge → write back.  MergeArrayHandling.Replace means that
-        // when the admin saves a gallery array the old one is fully replaced,
-        // not appended to — matching the behaviour of the previous blob-based
-        // implementation and what admin.js expects.
         string existing = File.ReadAllText(contentFilePath);
         JObject current = string.IsNullOrWhiteSpace(existing) ? new JObject() : JObject.Parse(existing);
         current.Merge(partial, new JsonMergeSettings { MergeArrayHandling = MergeArrayHandling.Replace });
@@ -130,11 +142,12 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
     }
 
     // ═════════════════════════════════════════════════════════════════════════
-    // POST /media — admin only: save base64-encoded image to disk
-    // Returns a URL path the frontend can use to fetch the image via the
-    // GET /media?file=<name> endpoint below.
+    // type=media, POST — admin only: save base64-encoded image to disk.
+    // Returns just the filename; the frontend builds the fetchable URL itself
+    // (it already knows the base URL + code, this function does not need to
+    // guess its own externally-visible address).
     // ═════════════════════════════════════════════════════════════════════════
-    if (path == "/media" && req.Method.Equals("POST", StringComparison.OrdinalIgnoreCase))
+    if (type == "media" && isPost)
     {
         var auth = await VerifyAdminAsync(req, log);
         if (!auth.ok)
@@ -146,13 +159,11 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
         catch { return CorsResult(new BadRequestObjectResult(new { error = "Body must be JSON with filename, contentType, dataBase64." }), responseOrigin); }
 
         string filename    = payload.Value<string>("filename")    ?? "upload";
-        string contentType = payload.Value<string>("contentType") ?? "image/jpeg";
         string dataBase64  = payload.Value<string>("dataBase64");
 
         if (string.IsNullOrEmpty(dataBase64))
             return CorsResult(new BadRequestObjectResult(new { error = "Missing dataBase64." }), responseOrigin);
 
-        // Accept both raw base64 and full data: URLs (from FileReader.readAsDataURL).
         string base64Part = dataBase64.Contains(",")
             ? dataBase64.Substring(dataBase64.IndexOf(',') + 1)
             : dataBase64;
@@ -172,18 +183,16 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
 
         log.LogInformation($"Media saved by {auth.email}: {safeName} ({bytes.Length} bytes)");
 
-        // The frontend fetches images via GET /api/media?file=<safeName>
-        return CorsResult(new OkObjectResult(new { filename = safeName, url = $"/api/media?file={safeName}" }), responseOrigin);
+        return CorsResult(new OkObjectResult(new { filename = safeName }), responseOrigin);
     }
 
     // ═════════════════════════════════════════════════════════════════════════
-    // GET /media?file=<name> — public: serve a saved image file
+    // type=media, GET&file=<name> — public: serve a saved image file
     // ═════════════════════════════════════════════════════════════════════════
-    if (path == "/media" && req.Method.Equals("GET", StringComparison.OrdinalIgnoreCase))
+    if (type == "media" && isGet)
     {
         string fileParam = req.Query["file"].FirstOrDefault() ?? "";
 
-        // Security: only allow simple filenames — no path traversal.
         if (string.IsNullOrEmpty(fileParam) || fileParam.Contains("..") || fileParam.Contains("/") || fileParam.Contains("\\"))
             return CorsResult(new BadRequestObjectResult(new { error = "Invalid file parameter." }), responseOrigin);
 
@@ -191,28 +200,24 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
         if (!File.Exists(filePath))
             return CorsResult(new NotFoundObjectResult(new { error = "File not found." }), responseOrigin);
 
-        // Determine MIME type from extension.
         string ext  = Path.GetExtension(fileParam).ToLowerInvariant();
         string mime = ext switch {
-            ".jpg" or ".jpeg" => "image/jpeg",
-            ".png"            => "image/png",
-            ".gif"            => "image/gif",
-            ".webp"           => "image/webp",
-            _                 => "application/octet-stream"
+            ".jpg"  => "image/jpeg",
+            ".jpeg" => "image/jpeg",
+            ".png"  => "image/png",
+            ".gif"  => "image/gif",
+            ".webp" => "image/webp",
+            _       => "application/octet-stream"
         };
 
         byte[] fileBytes = File.ReadAllBytes(filePath);
         return new FileContentResult(fileBytes, mime);
-        // NOTE: FileContentResult doesn't go through CorsResult — add CORS header manually.
-        // The browser doesn't need CORS on image requests (they use <img> tags, not fetch).
     }
 
     // ═════════════════════════════════════════════════════════════════════════
-    // POST /analytics — anonymous: append one page-view event to analytics.json
-    // Uses an in-place JSON file with a per-day counter dict — simpler than
-    // Table Storage and sufficient for the temple site's traffic volume.
+    // type=analytics, POST — anonymous: append one page-view event
     // ═════════════════════════════════════════════════════════════════════════
-    if (path == "/analytics" && req.Method.Equals("POST", StringComparison.OrdinalIgnoreCase))
+    if (type == "analytics" && isPost)
     {
         string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
         JObject payload;
@@ -222,7 +227,6 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
         string pagePath = payload.Value<string>("path") ?? "/";
         string today    = DateTime.UtcNow.ToString("yyyy-MM-dd");
 
-        // analytics.json structure: { "byDay": {"2026-07-04": 12, ...}, "byPath": {"/": 42, ...} }
         string existing = File.ReadAllText(analyticsFilePath);
         JObject analytics;
         try   { analytics = string.IsNullOrWhiteSpace(existing) ? new JObject() : JObject.Parse(existing); }
@@ -231,7 +235,7 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
         var byDay  = (JObject)(analytics["byDay"]  ?? (analytics["byDay"]  = new JObject()));
         var byPath = (JObject)(analytics["byPath"] ?? (analytics["byPath"] = new JObject()));
 
-        byDay[today]    = (byDay[today]?.Value<int>()    ?? 0) + 1;
+        byDay[today]     = (byDay[today]?.Value<int>()     ?? 0) + 1;
         byPath[pagePath] = (byPath[pagePath]?.Value<int>() ?? 0) + 1;
         analytics["lastUpdated"] = DateTime.UtcNow.ToString("o");
 
@@ -241,9 +245,9 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
     }
 
     // ═════════════════════════════════════════════════════════════════════════
-    // GET /analytics — admin only: return aggregate view stats
+    // type=analytics, GET — admin only: aggregate view stats
     // ═════════════════════════════════════════════════════════════════════════
-    if (path == "/analytics" && req.Method.Equals("GET", StringComparison.OrdinalIgnoreCase))
+    if (type == "analytics" && isGet)
     {
         var auth = await VerifyAdminAsync(req, log);
         if (!auth.ok)
@@ -257,7 +261,6 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
         var byDay  = (JObject)(analytics["byDay"]  ?? new JObject());
         var byPath = (JObject)(analytics["byPath"] ?? new JObject());
 
-        // Filter to last 30 days only.
         string cutoff = DateTime.UtcNow.AddDays(-30).ToString("yyyy-MM-dd");
         var filteredByDay = new JObject();
         int total = 0;
@@ -270,42 +273,39 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
             }
         }
 
-        // Top 10 pages by view count.
         var topPaths = byPath.Properties()
             .OrderByDescending(p => p.Value.Value<int>())
             .Take(10)
             .ToDictionary(p => p.Name, p => p.Value.Value<int>());
 
         return CorsResult(new OkObjectResult(new {
-            total    = total,
-            byDay    = filteredByDay,
-            byPath   = topPaths
+            total  = total,
+            byDay  = filteredByDay,
+            byPath = topPaths
         }), responseOrigin);
     }
 
-    // ── Fallback ─────────────────────────────────────────────────────────────
+    // ── Fallback: unknown or missing `type` ─────────────────────────────────
     return CorsResult(new OkObjectResult(new {
         service = "Kali Mandir API",
         status  = "running",
+        hint    = "Pass ?type=content|media|analytics",
         routes  = new[] {
-            "GET  /api/content",
-            "POST /api/content   (admin)",
-            "GET  /api/media?file=<name>",
-            "POST /api/media     (admin)",
-            "POST /api/analytics",
-            "GET  /api/analytics (admin)"
+            "GET  ?type=content",
+            "POST ?type=content   (admin)",
+            "GET  ?type=media&file=<name>",
+            "POST ?type=media     (admin)",
+            "POST ?type=analytics",
+            "GET  ?type=analytics (admin)"
         }
     }), responseOrigin);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CORS helper
-// Wraps any IActionResult in CORS headers so every response path carries them.
+// CORS helper — wraps any IActionResult so every response path carries headers.
 // ─────────────────────────────────────────────────────────────────────────────
 private static IActionResult CorsResult(IActionResult result, string origin)
 {
-    // We can't mutate the response headers from a plain IActionResult without
-    // middleware, so we wrap in a small decorator that adds the headers.
     return new CorsWrappedResult(result, origin);
 }
 
@@ -330,14 +330,7 @@ private class CorsWrappedResult : IActionResult
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Google ID token verification
-// ─────────────────────────────────────────────────────────────────────────────
-// Verifies the bearer token is a real, current Google ID token (via Google's
-// tokeninfo endpoint), that it was issued for THIS app (aud check), and that
-// the email is on the ADMIN_EMAILS allowlist. Reject on any failure.
-//
-// This is the ONLY real security boundary — the client-side check in admin.js
-// is convenience UX only and can always be bypassed.
+// Google ID token verification — the real security boundary for admin actions.
 // ─────────────────────────────────────────────────────────────────────────────
 private static readonly HttpClient _httpClient = new HttpClient();
 
