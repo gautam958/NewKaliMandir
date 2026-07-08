@@ -518,7 +518,10 @@ private static async Task<(string country, string state, string city)> LookupGeo
     if (string.IsNullOrEmpty(ip) || ip == "::1" || ip.StartsWith("127.") ||
         ip.StartsWith("10.") || ip.StartsWith("192.168.") || ip == "Unknown")
         return ("Unknown", "Unknown", "Unknown");
-
+    
+    if(ip.Contains(":")){
+        ip= ip.Split(":")[0];
+      }
     try
     {
         var response = await _geoClient.GetAsync(
