@@ -32,7 +32,8 @@
   };
 
   // Azure Functions content API base — set this o  const API_BASE =
-  "https://communication-fn.azurewebsites.net/api/KaliMandir?code=ybuYDQDF-EC2Fn0ez0UoT9bA0NCDprTb-rsvlb1GNHmVAzFuzGUvPw==" ||
+  const API_BASE =
+    "https://communication-fn.azurewebsites.net/api/KaliMandir?code=ybuYDQDF-EC2Fn0ez0UoT9bA0NCDprTb-rsvlb1GNHmVAzFuzGUvPw==" ||
     null; // e.g. "https://kalimandir-func.azurewebsites.net/api"
   // Builds a request URL against API_BASE using query-param dispatch
   // (?type=content, ?type=media, ...) rather than appending path segments.
