@@ -216,6 +216,35 @@ the fallback value in the `initTheme()` function in both `index.js` and
 const theme = THEMES.includes(saved) ? saved : "dark"; // change "dark" to e.g. "marigold"
 ```
 
+## Visitor analytics
+
+`index.html` (only — never `admin.html`) sends a `track_visitor` beacon on
+every page load, which does two things server-side:
+
+1. Increments simple page-view counters (same as before — total views,
+   views by day, views by page).
+2. Records an anonymous visitor: a random ID is generated in the visitor's
+   browser on first visit (`localStorage`, no cookies), and the *first* time
+   the backend sees that ID it resolves the visitor's approximate country,
+   state, and city from their IP address via [ip-api.com](http://ip-api.com)'s
+   free GeoIP API. Every later visit from the same browser just increments a
+   visit counter and reuses the cached location — it doesn't re-query GeoIP
+   or track anything beyond that counter and timestamp.
+
+The admin Analytics tab shows: total/new/repeat visitor counts, top
+countries/states/cities, a recent-visitors table (IP, location, visit count,
+last seen), and the existing page-view chart. Visitor/location data only
+appears once the Azure backend is connected — it can't be simulated in local
+preview, since geo-IP lookup has to happen server-side.
+
+**Worth knowing:** this stores visitor IP addresses and approximate location
+in `%HOME%/data/visitors.json`. That's completely standard practice (every
+major analytics tool does the same), but if the temple's site draws visitors
+from places with stricter privacy rules (the EU, for instance), a short
+privacy note on the site mentioning that visits are logged anonymously would
+be a reasonable, low-effort thing to add — this repo doesn't currently
+include one.
+
 ## How content editing works
 
 - The Samagri tab supports any number of separate, named lists (Daily, Kali
@@ -262,8 +291,9 @@ The `KL_` prefix (rather than plain `GOOGLE_CLIENT_ID`, etc.) exists because
 this backend may run on a Function App shared with other, unrelated
 projects — the prefix avoids clashing with their environment variables.
 
-> **Note on storage:** all content, analytics, and uploaded images are stored
-> as JSON/binary files on the Function App's own drive (`%HOME%/data/`),
+> **Note on storage:** all content, analytics, visitor records, and uploaded
+> images are stored as JSON/binary files on the Function App's own drive
+> (`%HOME%/data/content.json`, `analytics.json`, `visitors.json`, `media/`),
 > following the PratapTravels reference pattern — no Blob or Table Storage
 > needed. The Function App drive persists within a deployment but isn't
 > backed up automatically; back up periodically via `GET ?type=content` if

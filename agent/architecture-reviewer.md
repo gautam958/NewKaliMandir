@@ -45,11 +45,16 @@ style or business logic (see `code-reviewer.md` for that).
    intentionally simpler and sufficient for this site's scale.
 
 5. **Storage is always the Function App drive JSON files.**
-   All content (site copy, schedule, samagri lists), analytics, and media
-   metadata live in JSON files under `%HOME%/data/` on the Function App.
-   Media binary files (images) are stored in `%HOME%/data/media/` and served
-   via `?type=media&file=<name>` (query-param dispatch, not a path route —
-   see rule 4). Do not introduce Azure Blob Storage, Azure Table Storage, or
+   All content (site copy, schedule, samagri lists), page-view analytics,
+   the visitor registry (`visitors.json` — anonymous ID, IP, cached geo,
+   visit count), and media metadata live in JSON files under `%HOME%/data/`
+   on the Function App. Media binary files (images) are stored in
+   `%HOME%/data/media/` and served via `?type=media&file=<name>`
+   (query-param dispatch, not a path route — see rule 4). GeoIP lookups
+   (ip-api.com) happen once per new visitor and get cached in
+   `visitors.json` — never re-look-up on every request, that wastes the
+   free tier's rate limit for no benefit. Do not introduce Azure Blob
+   Storage, Azure Table Storage, or
    any external database — the file-system pattern is intentional and
    sufficient for the temple site's data size and traffic.
 

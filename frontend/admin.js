@@ -279,10 +279,6 @@
     } else {
       photo.style.display = "none";
     }
-    if (!API_BASE) {
-      document.getElementById("backendStatus").textContent =
-        "No Azure Functions API configured yet — changes save to this browser only (local preview mode). Deploy /azure-functions and set window.KALI_MANDIR_API_BASE to sync edits to the live site.";
-    }
     initApp();
   }
 
@@ -618,8 +614,7 @@
         headers: { Authorization: `Bearer ${currentUser.idToken}` },
       });
       if (!res.ok) return null;
-      const data = await res.json();
-      return data.byDay || null; // { "2026-06-20": 14, ... }
+      return await res.json(); // { views: {total, byDay, byPath}, visitors: {total, newVisitors, repeatVisitors, byCountry, byState, byCity, recent} }
     } catch (err) {
       console.warn(
         "Could not load backend analytics, showing local demo log instead.",
@@ -629,14 +624,97 @@
     }
   }
 
+  function renderGeoList(elId, counts) {
+    const el = document.getElementById(elId);
+    const entries = Object.entries(counts || {}).sort((a, b) => b[1] - a[1]);
+    el.innerHTML = entries.length
+      ? entries
+          .map(
+            ([name, count]) =>
+              `<div class="geo-row"><span class="name">${escapeHtml(name)}</span><span class="count">${count}</span></div>`,
+          )
+          .join("")
+      : '<p class="hint">No data yet.</p>';
+  }
+
+  function formatVisitTime(iso) {
+    if (!iso) return "–";
+    try {
+      return new Date(iso).toLocaleString(undefined, {
+        dateStyle: "medium",
+        timeStyle: "short",
+      });
+    } catch (err) {
+      return iso;
+    }
+  }
+
+  function renderRecentVisitors(recent) {
+    const body = document.getElementById("recentVisitorsBody");
+    if (!recent || !recent.length) {
+      body.innerHTML =
+        '<tr><td colspan="4"><span class="hint">No visitors recorded yet.</span></td></tr>';
+      return;
+    }
+    body.innerHTML = recent
+      .map((v) => {
+        const location =
+          [v.city, v.state, v.country]
+            .filter((x) => x && x !== "Unknown")
+            .join(", ") || "Unknown";
+        return `<tr>
+          <td>${escapeHtml(v.ip || "–")}</td>
+          <td>${escapeHtml(location)}</td>
+          <td class="qty-col">${v.visitCount || 1}</td>
+          <td class="qty-col">${formatVisitTime(v.lastVisit)}</td>
+        </tr>`;
+      })
+      .join("");
+  }
+
+  function renderVisitorStats(visitors) {
+    if (visitors) {
+      document.getElementById("statVisitorsTotal").textContent =
+        visitors.total ?? 0;
+      document.getElementById("statVisitorsNew").textContent =
+        visitors.newVisitors ?? 0;
+      document.getElementById("statVisitorsRepeat").textContent =
+        visitors.repeatVisitors ?? 0;
+      renderGeoList("byCountryList", visitors.byCountry);
+      renderGeoList("byStateList", visitors.byState);
+      renderGeoList("byCityList", visitors.byCity);
+      renderRecentVisitors(visitors.recent);
+    } else {
+      // No backend connected — visitor/geo data can only come from the server
+      // (geo-IP lookup has to happen server-side), so there's no meaningful
+      // local-preview equivalent the way page-views has. Show a clear reason
+      // rather than fake zeros.
+      ["statVisitorsTotal", "statVisitorsNew", "statVisitorsRepeat"].forEach(
+        (id) => {
+          document.getElementById(id).textContent = "–";
+        },
+      );
+      const note =
+        '<p class="hint">Connect the Azure backend to see visitor location data.</p>';
+      document.getElementById("byCountryList").innerHTML = note;
+      document.getElementById("byStateList").innerHTML = "";
+      document.getElementById("byCityList").innerHTML = "";
+      document.getElementById("recentVisitorsBody").innerHTML =
+        `<tr><td colspan="4">${note}</td></tr>`;
+    }
+  }
+
   async function renderAnalytics() {
-    const backendLog = await fetchBackendAnalytics();
-    const log =
-      backendLog || JSON.parse(localStorage.getItem("km_analytics") || "{}");
-    const source = backendLog ? "live" : "local";
+    const backend = await fetchBackendAnalytics();
+    const log = backend
+      ? backend.views.byDay
+      : JSON.parse(localStorage.getItem("km_analytics") || "{}");
+    const source = backend ? "live" : "local";
 
     const days = Object.keys(log).sort().slice(-14);
-    const total = Object.values(log).reduce((a, b) => a + b, 0);
+    const total = backend
+      ? backend.views.total
+      : Object.values(log).reduce((a, b) => a + b, 0);
     const todayKey = new Date().toISOString().slice(0, 10);
     const today = log[todayKey] || 0;
     const last14Sum = days.reduce((sum, d) => sum + log[d], 0);
@@ -662,6 +740,8 @@
             )
             .join("")
         : '<p class="hint">No visits logged yet. Open index.html a few times to see demo data here.</p>');
+
+    renderVisitorStats(backend ? backend.visitors : null);
   }
 
   /* ---------------- Helpers ---------------- */

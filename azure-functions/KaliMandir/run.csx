@@ -18,8 +18,8 @@
     POST ?type=content              — admin:  merge-update site content JSON
     POST ?type=media                — admin:  save uploaded image to disk, return filename
     GET  ?type=media&file=<name>    — public: serve a previously uploaded image
-    POST ?type=analytics            — anonymous: log a page-view event
-    GET  ?type=analytics            — admin:  return per-day view counts (last 30 days)
+    POST ?type=track_visitor        — anonymous: log a page view + visitor (index.html only)
+    GET  ?type=analytics            — admin:  page-view + visitor aggregates (last 30 days)
 
   Storage: all data lives as JSON files under %HOME%/data/ on the Function
   App drive (same pattern as the PratapTravels reference function). No Azure
@@ -101,9 +101,11 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
 
     string contentFilePath   = Path.Combine(dataDir, "content.json");
     string analyticsFilePath = Path.Combine(dataDir, "analytics.json");
+    string visitorsFilePath  = Path.Combine(dataDir, "visitors.json");
 
     if (!File.Exists(contentFilePath))   File.WriteAllText(contentFilePath,   "{}");
     if (!File.Exists(analyticsFilePath)) File.WriteAllText(analyticsFilePath, "{}");
+    if (!File.Exists(visitorsFilePath))  File.WriteAllText(visitorsFilePath,  "{}");
 
     bool isGet  = req.Method.Equals("GET",  StringComparison.OrdinalIgnoreCase);
     bool isPost = req.Method.Equals("POST", StringComparison.OrdinalIgnoreCase);
@@ -215,37 +217,89 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
     }
 
     // ═════════════════════════════════════════════════════════════════════════
-    // type=analytics, POST — anonymous: append one page-view event
+    // type=track_visitor, POST — anonymous. Called from index.html ONLY (never
+    // admin.html — we track site visitors, not admin panel usage).
+    //
+    // Does two things in one call:
+    //   1. Increments the same byDay/byPath page-view counters as before.
+    //   2. Looks up (or updates) a visitor record keyed by an anonymous,
+    //      per-browser `visitorId` (a random ID generated client-side and
+    //      kept in localStorage — no cookies, no personal identifiers).
+    //      First-ever sight of a visitorId → new visitor, geo-IP looked up
+    //      once and cached. Every subsequent sight → repeat visit, geo data
+    //      reused rather than re-queried (keeps this fast and avoids hitting
+    //      the free GeoIP API's rate limit).
     // ═════════════════════════════════════════════════════════════════════════
-    if (type == "analytics" && isPost)
+    if (type == "track_visitor" && isPost)
     {
         string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
         JObject payload;
         try   { payload = JObject.Parse(requestBody); }
         catch { payload = new JObject(); }
 
-        string pagePath = payload.Value<string>("path") ?? "/";
-        string today    = DateTime.UtcNow.ToString("yyyy-MM-dd");
+        string pagePath  = payload.Value<string>("path")      ?? "/";
+        string visitorId = payload.Value<string>("visitorId") ?? "";
+        string today     = DateTime.UtcNow.ToString("yyyy-MM-dd");
+        string nowIso    = DateTime.UtcNow.ToString("o");
 
-        string existing = File.ReadAllText(analyticsFilePath);
+        // -- Page-view counters (unchanged behaviour from before) --
+        string existingAnalytics = File.ReadAllText(analyticsFilePath);
         JObject analytics;
-        try   { analytics = string.IsNullOrWhiteSpace(existing) ? new JObject() : JObject.Parse(existing); }
+        try   { analytics = string.IsNullOrWhiteSpace(existingAnalytics) ? new JObject() : JObject.Parse(existingAnalytics); }
         catch { analytics = new JObject(); }
 
         var byDay  = (JObject)(analytics["byDay"]  ?? (analytics["byDay"]  = new JObject()));
         var byPath = (JObject)(analytics["byPath"] ?? (analytics["byPath"] = new JObject()));
-
         byDay[today]     = (byDay[today]?.Value<int>()     ?? 0) + 1;
         byPath[pagePath] = (byPath[pagePath]?.Value<int>() ?? 0) + 1;
-        analytics["lastUpdated"] = DateTime.UtcNow.ToString("o");
-
+        analytics["lastUpdated"] = nowIso;
         File.WriteAllText(analyticsFilePath, analytics.ToString(Formatting.Indented));
+
+        // -- Visitor registry: new vs. repeat, geo-location --
+        if (!string.IsNullOrEmpty(visitorId))
+        {
+            string existingVisitors = File.ReadAllText(visitorsFilePath);
+            JObject visitorsRoot;
+            try   { visitorsRoot = string.IsNullOrWhiteSpace(existingVisitors) ? new JObject() : JObject.Parse(existingVisitors); }
+            catch { visitorsRoot = new JObject(); }
+            var visitorsArr = (JArray)(visitorsRoot["visitors"] ?? (visitorsRoot["visitors"] = new JArray()));
+
+            JObject existingVisitor = visitorsArr.OfType<JObject>()
+                .FirstOrDefault(v => v.Value<string>("visitorId") == visitorId);
+
+            string clientIp = GetClientIp(req);
+
+            if (existingVisitor != null)
+            {
+                // Repeat visit — just bump the counters, reuse cached geo/IP.
+                existingVisitor["visitCount"] = (existingVisitor["visitCount"]?.Value<int>() ?? 1) + 1;
+                existingVisitor["lastVisit"]  = nowIso;
+            }
+            else
+            {
+                // First-ever sight of this visitorId — resolve geo once.
+                var geo = await LookupGeoAsync(clientIp, log);
+                visitorsArr.Add(new JObject
+                {
+                    ["visitorId"]   = visitorId,
+                    ["ip"]          = clientIp,
+                    ["country"]     = geo.country,
+                    ["state"]       = geo.state,
+                    ["city"]        = geo.city,
+                    ["firstVisit"]  = nowIso,
+                    ["lastVisit"]   = nowIso,
+                    ["visitCount"]  = 1
+                });
+            }
+
+            File.WriteAllText(visitorsFilePath, visitorsRoot.ToString(Formatting.Indented));
+        }
 
         return CorsResult(new NoContentResult(), responseOrigin);
     }
 
     // ═════════════════════════════════════════════════════════════════════════
-    // type=analytics, GET — admin only: aggregate view stats
+    // type=analytics, GET — admin only: page views + visitor aggregates
     // ═════════════════════════════════════════════════════════════════════════
     if (type == "analytics" && isGet)
     {
@@ -253,9 +307,10 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
         if (!auth.ok)
             return CorsResult(new UnauthorizedObjectResult(new { error = auth.error }), responseOrigin);
 
-        string existing = File.ReadAllText(analyticsFilePath);
+        // -- Page views --
+        string existingAnalytics = File.ReadAllText(analyticsFilePath);
         JObject analytics;
-        try   { analytics = string.IsNullOrWhiteSpace(existing) ? new JObject() : JObject.Parse(existing); }
+        try   { analytics = string.IsNullOrWhiteSpace(existingAnalytics) ? new JObject() : JObject.Parse(existingAnalytics); }
         catch { analytics = new JObject(); }
 
         var byDay  = (JObject)(analytics["byDay"]  ?? new JObject());
@@ -263,13 +318,13 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
 
         string cutoff = DateTime.UtcNow.AddDays(-30).ToString("yyyy-MM-dd");
         var filteredByDay = new JObject();
-        int total = 0;
+        int totalViews = 0;
         foreach (var prop in byDay.Properties())
         {
             if (string.Compare(prop.Name, cutoff) >= 0)
             {
                 filteredByDay[prop.Name] = prop.Value;
-                total += prop.Value.Value<int>();
+                totalViews += prop.Value.Value<int>();
             }
         }
 
@@ -278,10 +333,53 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
             .Take(10)
             .ToDictionary(p => p.Name, p => p.Value.Value<int>());
 
+        // -- Visitors --
+        string existingVisitors = File.ReadAllText(visitorsFilePath);
+        JObject visitorsRoot;
+        try   { visitorsRoot = string.IsNullOrWhiteSpace(existingVisitors) ? new JObject() : JObject.Parse(existingVisitors); }
+        catch { visitorsRoot = new JObject(); }
+        var visitorObjs = ((visitorsRoot["visitors"] as JArray) ?? new JArray()).OfType<JObject>().ToList();
+
+        int totalVisitors = visitorObjs.Count;
+
+        DateTime thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
+        int newVisitors = visitorObjs.Count(v =>
+            DateTime.TryParse(v.Value<string>("firstVisit"), null, System.Globalization.DateTimeStyles.RoundtripKind, out var fv)
+            && fv >= thirtyDaysAgo);
+        int repeatVisitors = visitorObjs.Count(v => (v.Value<int?>("visitCount") ?? 1) > 1);
+
+        var byCountry = visitorObjs.GroupBy(v => v.Value<string>("country") ?? "Unknown")
+            .OrderByDescending(g => g.Count()).Take(10).ToDictionary(g => g.Key, g => g.Count());
+        var byState = visitorObjs.GroupBy(v => v.Value<string>("state") ?? "Unknown")
+            .OrderByDescending(g => g.Count()).Take(10).ToDictionary(g => g.Key, g => g.Count());
+        var byCity = visitorObjs.GroupBy(v => v.Value<string>("city") ?? "Unknown")
+            .OrderByDescending(g => g.Count()).Take(10).ToDictionary(g => g.Key, g => g.Count());
+
+        var recentVisitors = visitorObjs
+            .OrderByDescending(v => v.Value<string>("lastVisit"))
+            .Take(25)
+            .Select(v => new {
+                ip         = v.Value<string>("ip"),
+                country    = v.Value<string>("country"),
+                state      = v.Value<string>("state"),
+                city       = v.Value<string>("city"),
+                visitCount = v.Value<int?>("visitCount") ?? 1,
+                firstVisit = v.Value<string>("firstVisit"),
+                lastVisit  = v.Value<string>("lastVisit")
+            })
+            .ToList();
+
         return CorsResult(new OkObjectResult(new {
-            total  = total,
-            byDay  = filteredByDay,
-            byPath = topPaths
+            views = new { total = totalViews, byDay = filteredByDay, byPath = topPaths },
+            visitors = new {
+                total          = totalVisitors,
+                newVisitors    = newVisitors,
+                repeatVisitors = repeatVisitors,
+                byCountry      = byCountry,
+                byState        = byState,
+                byCity         = byCity,
+                recent         = recentVisitors
+            }
         }), responseOrigin);
     }
 
@@ -289,14 +387,14 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
     return CorsResult(new OkObjectResult(new {
         service = "Kali Mandir API",
         status  = "running",
-        hint    = "Pass ?type=content|media|analytics",
+        hint    = "Pass ?type=content|media|track_visitor|analytics",
         routes  = new[] {
             "GET  ?type=content",
-            "POST ?type=content   (admin)",
+            "POST ?type=content        (admin)",
             "GET  ?type=media&file=<name>",
-            "POST ?type=media     (admin)",
-            "POST ?type=analytics",
-            "GET  ?type=analytics (admin)"
+            "POST ?type=media          (admin)",
+            "POST ?type=track_visitor",
+            "GET  ?type=analytics      (admin)"
         }
     }), responseOrigin);
 }
@@ -385,4 +483,62 @@ private static async Task<(bool ok, string error, string email)> VerifyAdminAsyn
         return (false, $"{email} is not on the temple admin list.", email);
 
     return (true, null, email);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Client IP extraction
+// ─────────────────────────────────────────────────────────────────────────────
+// Azure's front-end proxy sets X-Forwarded-For to the real client IP; the
+// connection-level RemoteIpAddress would otherwise just show Azure's own
+// load balancer. X-Forwarded-For can be a comma-separated chain if the
+// request passed through multiple proxies — the first entry is the
+// original client.
+private static string GetClientIp(HttpRequest req)
+{
+    string forwarded = req.Headers["X-Forwarded-For"].FirstOrDefault();
+    if (!string.IsNullOrEmpty(forwarded))
+        return forwarded.Split(',')[0].Trim();
+
+    return req.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GeoIP lookup (country / state / city from an IP address)
+// ─────────────────────────────────────────────────────────────────────────────
+// Uses ip-api.com's free tier (no API key, ~45 req/min limit) — plenty for a
+// small temple site, since this is only called once per NEW visitor (repeat
+// visits reuse the cached result from their first visit; see track_visitor).
+// Free tier is HTTP-only, not HTTPS — that's fine here since this call is
+// server-to-server, not from the browser, so there's no mixed-content issue.
+private static readonly HttpClient _geoClient = new HttpClient();
+
+private static async Task<(string country, string state, string city)> LookupGeoAsync(string ip, ILogger log)
+{
+    // Loopback/private IPs can't be geolocated (common in local testing).
+    if (string.IsNullOrEmpty(ip) || ip == "::1" || ip.StartsWith("127.") ||
+        ip.StartsWith("10.") || ip.StartsWith("192.168.") || ip == "Unknown")
+        return ("Unknown", "Unknown", "Unknown");
+
+    try
+    {
+        var response = await _geoClient.GetAsync(
+            $"http://ip-api.com/json/{Uri.EscapeDataString(ip)}?fields=status,country,regionName,city");
+        if (!response.IsSuccessStatusCode)
+            return ("Unknown", "Unknown", "Unknown");
+
+        var json = JObject.Parse(await response.Content.ReadAsStringAsync());
+        if (json.Value<string>("status") != "success")
+            return ("Unknown", "Unknown", "Unknown");
+
+        return (
+            json.Value<string>("country")    ?? "Unknown",
+            json.Value<string>("regionName") ?? "Unknown",
+            json.Value<string>("city")       ?? "Unknown"
+        );
+    }
+    catch (Exception ex)
+    {
+        log.LogWarning($"GeoIP lookup failed for {ip}: {ex.Message}");
+        return ("Unknown", "Unknown", "Unknown");
+    }
 }

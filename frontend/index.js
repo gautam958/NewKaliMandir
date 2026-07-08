@@ -31,9 +31,8 @@
     qr_image: null,
   };
 
-  // Azure Functions content API base — set this once the backend is deployed.
-  const API_BASE =
-    "https://communication-fn.azurewebsites.net/api/KaliMandir?code=ybuYDQDF-EC2Fn0ez0UoT9bA0NCDprTb-rsvlb1GNHmVAzFuzGUvPw==" ||
+  // Azure Functions content API base — set this o  const API_BASE =
+  "https://communication-fn.azurewebsites.net/api/KaliMandir?code=ybuYDQDF-EC2Fn0ez0UoT9bA0NCDprTb-rsvlb1GNHmVAzFuzGUvPw==" ||
     null; // e.g. "https://kalimandir-func.azurewebsites.net/api"
   // Builds a request URL against API_BASE using query-param dispatch
   // (?type=content, ?type=media, ...) rather than appending path segments.
@@ -576,10 +575,25 @@
     }
   }
 
-  /* ---------------- Lightweight analytics beacon ----------------
-     Posts to the Azure Function analytics endpoint if configured;
-     always also logs a local demo counter so the Admin dashboard
-     has something to show before the backend is deployed. */
+  /* ---------------- Visitor tracking (index.html ONLY — never admin.html) ----------------
+     Posts to the Azure Function's track_visitor endpoint if configured, which
+     logs a page view AND records an anonymous visitor (new vs. repeat, with
+     IP-based geo lookup done server-side). Always also logs a local demo
+     counter so something shows in the Admin dashboard's page-view chart even
+     before a backend is connected — the visitor/geo metrics themselves only
+     come from the real backend, since geo-IP lookup has to happen server-side. */
+  function getVisitorId() {
+    let id = localStorage.getItem("km_visitor_id");
+    if (!id) {
+      id =
+        window.crypto && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `v-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      localStorage.setItem("km_visitor_id", id);
+    }
+    return id;
+  }
+
   function trackVisit() {
     try {
       const today = new Date().toISOString().slice(0, 10);
@@ -591,10 +605,14 @@
     }
 
     if (API_BASE) {
-      fetch(apiUrl("analytics"), {
+      fetch(apiUrl("track_visitor"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path: location.pathname, ts: Date.now() }),
+        body: JSON.stringify({
+          path: location.pathname,
+          visitorId: getVisitorId(),
+          ts: Date.now(),
+        }),
         keepalive: true,
       }).catch(() => {});
     }
