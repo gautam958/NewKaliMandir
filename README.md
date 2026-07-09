@@ -195,19 +195,35 @@ Sign-In button (once `KM_GOOGLE_CLIENT_ID` is set) with no fallback path.
 
 ## Themes
 
-The site ships with four selectable color themes, switched via the small
+The site ships with six selectable color themes, switched via the small
 circular swatch button next to the language toggle (top right on the public
-site; top bar on the admin panel): **Kali Night** (dark maroon, the
-original default), **Dusk** (a lighter deep plum), **Marigold** (light warm
-ivory), and **Sandstone** (light terracotta/sand). The choice is saved per
-browser in `localStorage` — each visitor keeps their own preference.
+site; top bar on the admin panel):
+
+| Theme | Mood |
+|---|---|
+| **Kali Night** | Dark maroon-black, the original default |
+| **Dusk** | A lighter, deep plum |
+| **Royal Purple** | Dark indigo-purple, regal |
+| **Marigold** | Light warm ivory/cream |
+| **Sandstone** | Light terracotta/sand |
+| **Lotus** | Light soft blush-pink |
+
+The choice is saved per browser in `localStorage` — each visitor keeps their
+own preference.
 
 Every color in `styles.css` is a CSS custom property scoped under
-`html[data-theme="..."]`, so adding a fifth theme is just adding one more
+`html[data-theme="..."]`, so adding a seventh theme is just adding one more
 block with the same set of variable names (copy an existing block and
-adjust the hex values) — see the comment at the top of `styles.css` for the
-full token list, and `agent/architecture-reviewer.md` for the rule about
-never hardcoding a color outside those blocks.
+adjust the hex values), then adding a matching button in the `.theme-menu`
+markup in both `index.html` and `admin.html`, and the theme's key to the
+`THEMES` array in both `index.js` and `admin.js` — see the comment at the
+top of `styles.css` for the full token list, and
+`agent/architecture-reviewer.md` for the rule about never hardcoding a
+color outside those blocks. Every new theme's tokens should be checked
+against WCAG AA contrast (4.5:1 for body text) before shipping — a couple
+of the existing light themes needed their gold/muted tones darkened a
+noticeable amount from a first pass to actually clear that bar on a light
+background.
 
 To change the **default** theme new visitors see (currently "dark"), edit
 the fallback value in the `initTheme()` function in both `index.js` and
@@ -244,6 +260,36 @@ from places with stricter privacy rules (the EU, for instance), a short
 privacy note on the site mentioning that visits are logged anonymously would
 be a reasonable, low-effort thing to add — this repo doesn't currently
 include one.
+
+## Performance & mobile reliability
+
+- **Every backend `fetch()` call has a hard timeout** (`fetchWithTimeout()` in
+  both `index.js` and `admin.js`, 4–20 seconds depending on the call). Plain
+  `fetch()` has no built-in timeout — on a flaky mobile connection, an
+  unreachable or slow backend can hang far longer than any visitor will
+  wait, and since the hero photo, gallery, and every other dynamic section
+  only render *after* `loadContent()` resolves, a hung fetch stalls the
+  entire page, not just the network call. If you add a new `fetch()` call
+  anywhere in either file, wrap it in `fetchWithTimeout()` rather than
+  calling `fetch()` directly, or you'll reintroduce this failure mode.
+- **Gallery photos are lazy-loaded** (`<img loading="lazy" decoding="async">`,
+  with an opacity fade-in tied to the real `onload` event, not just the `src`
+  attribute being set). CSS `background-image` — used for the hero and
+  slider, deliberately — is *not* natively lazy-loadable by browsers, which
+  is why the gallery specifically uses real `<img>` tags: 11 photos loading
+  eagerly on page load was a meaningful chunk of avoidable weight low down
+  the page most visitors haven't scrolled to yet.
+- **The hero photo is preloaded** (`<link rel="preload" as="image">` in
+  `index.html`, pointed at the default hero image) since, unlike the
+  gallery, it's above the fold and should load with priority, not be
+  deferred.
+- Default photos are compressed to ~900px on the long edge / quality 74 —
+  intentionally modest, since the hero gets a gradient overlay and gallery
+  photos display at small grid-cell sizes, so little of a higher-fidelity
+  source would actually be visible. If you add new photos via the CMS, they
+  aren't run through this same compression (the admin upload path stores
+  whatever the browser produces from the selected file) — keep uploads
+  reasonably sized for the same mobile-friendliness.
 
 ## How content editing works
 

@@ -518,10 +518,13 @@ private static async Task<(string country, string state, string city)> LookupGeo
     if (string.IsNullOrEmpty(ip) || ip == "::1" || ip.StartsWith("127.") ||
         ip.StartsWith("10.") || ip.StartsWith("192.168.") || ip == "Unknown")
         return ("Unknown", "Unknown", "Unknown");
-    
-    if(ip.Contains(":")){
-        ip= ip.Split(":")[0];
-      }
+
+    // Strip a ":port" suffix (e.g. "203.0.113.5:54321" -> "203.0.113.5") —
+    // some proxies append it to X-Forwarded-For. Only when there's exactly
+    // one colon, so a genuine IPv6 address (multiple colons) is left intact.
+    if (ip.Count(c => c == ':') == 1)
+        ip = ip.Split(':')[0];
+
     try
     {
         var response = await _geoClient.GetAsync(

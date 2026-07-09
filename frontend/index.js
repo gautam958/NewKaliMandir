@@ -31,7 +31,7 @@
     qr_image: null,
   };
 
-  // Azure Functions content API base — set this o  const API_BASE =
+  // Azure Functions content API base — set this once the backend is deployed.
   const API_BASE =
     "https://communication-fn.azurewebsites.net/api/KaliMandir?code=ybuYDQDF-EC2Fn0ez0UoT9bA0NCDprTb-rsvlb1GNHmVAzFuzGUvPw==" ||
     null; // e.g. "https://kalimandir-func.azurewebsites.net/api"
@@ -53,9 +53,11 @@
 
   async function loadDefaults() {
     try {
-      const res = await fetch("assets/default-content.json", {
-        cache: "no-store",
-      });
+      const res = await fetchWithTimeout(
+        "assets/default-content.json",
+        { cache: "no-store" },
+        4000,
+      );
       if (!res.ok) throw new Error("bad status");
       return await res.json();
     } catch (err) {
@@ -64,16 +66,37 @@
     }
   }
 
+  // fetch() has no built-in timeout — on a flaky mobile connection, an
+  // unreachable or slow backend can leave this hanging far longer than any
+  // user will wait, and since hero/gallery/etc. only render AFTER loadContent()
+  // resolves, the whole page's dynamic content stalls with it. This wraps any
+  // fetch with a hard deadline so we always fall back to default-content.json
+  // promptly instead of leaving visitors staring at a half-loaded page.
+  function fetchWithTimeout(url, options, timeoutMs) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    return fetch(url, { ...options, signal: controller.signal }).finally(() =>
+      clearTimeout(timer),
+    );
+  }
+
   async function loadContent() {
     let base = await loadDefaults();
 
     if (API_BASE) {
       try {
-        const res = await fetch(apiUrl("content"), { cache: "no-store" });
+        const res = await fetchWithTimeout(
+          apiUrl("content"),
+          { cache: "no-store" },
+          4000,
+        );
         if (!res.ok) throw new Error("bad status");
         base = { ...base, ...(await res.json()) };
       } catch (err) {
-        console.warn("Content API unavailable, using default content.", err);
+        console.warn(
+          "Content API unavailable or slow, using default content.",
+          err,
+        );
       }
     }
     // Local admin-panel edits (used until the Azure backend is deployed / for local preview)
@@ -89,7 +112,14 @@
   }
 
   /* ---------------- Theme switcher ---------------- */
-  const THEMES = ["dark", "dusk", "marigold", "sandstone"];
+  const THEMES = [
+    "dark",
+    "dusk",
+    "marigold",
+    "sandstone",
+    "royal-purple",
+    "lotus",
+  ];
   function initTheme() {
     const html = document.documentElement;
     const saved = localStorage.getItem("km_theme");
@@ -208,10 +238,8 @@
     if (!grid) return;
     grid.innerHTML = galleryItems
       .map(
-        (
-          g,
-          i,
-        ) => `<div class="g-item" data-idx="${i}" style="${g.image ? `background-image:url('${g.image}')` : ""}">
+        (g, i) => `<div class="g-item" data-idx="${i}">
+          ${g.image ? `<img src="${g.image}" alt="${escapeHtml(g.caption_en || "")}" loading="lazy" decoding="async" onload="this.classList.add('loaded')">` : ""}
           <span class="cap"><span lang-el="en">${g.caption_en}</span><span lang-el="hi">${g.caption_hi}</span></span>
         </div>`,
       )

@@ -31,6 +31,13 @@ already pass and focus here on the code itself.
   must render immediately; `fetch` calls for content/analytics should not
   delay `DOMContentLoaded` handlers from wiring up interactivity (scroll-spy,
   language toggle) — those must work even if the network is slow or down.
+- **Every `fetch()` call must go through `fetchWithTimeout()`, never bare
+  `fetch()`.** Plain `fetch()` has no timeout — on a flaky mobile connection
+  a hung request can block whatever awaits it indefinitely, and since
+  content rendering (hero image, gallery, everything) awaits `loadContent()`,
+  one hung request stalls the entire page. This was a real bug that shipped
+  once already; flag any new `fetch(` call in `index.js`/`admin.js` that
+  doesn't go through the helper.
 - **`localStorage` usage is a fallback, not a database.** Flag any code that
   treats `km_content_override` or `km_analytics` as the durable source of
   truth once a real backend exists — it's per-browser and easily cleared.

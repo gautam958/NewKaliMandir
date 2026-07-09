@@ -9,6 +9,11 @@
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <link rel="manifest" href="site.webmanifest">
+<!-- Hero photo loads above the fold, so hint the browser to fetch it early.
+     This matches the DEFAULT hero_image in assets/default-content.json —
+     if an admin changes the hero photo via the CMS, this preload just goes
+     unused (a small wasted prefetch), it doesn't break anything. -->
+<link rel="preload" as="image" href="assets/img/sanctum-wide.jpg">
 <meta name="description" content="Official website of New Kali Mandir, Belabagan, Deoghar, Jharkhand — timings, puja schedule, gallery, and donations." />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -43,6 +48,8 @@
         <button type="button" class="theme-option" data-theme-opt="dusk"><span class="swatch" style="background:#2b1626;border-color:#d4a955"></span>Dusk</button>
         <button type="button" class="theme-option" data-theme-opt="marigold"><span class="swatch" style="background:#fbf3e6;border-color:#b3122a"></span>Marigold</button>
         <button type="button" class="theme-option" data-theme-opt="sandstone"><span class="swatch" style="background:#f3e4c8;border-color:#a8351e"></span>Sandstone</button>
+        <button type="button" class="theme-option" data-theme-opt="royal-purple"><span class="swatch" style="background:#180a2e;border-color:#c9a24b"></span>Royal Purple</button>
+        <button type="button" class="theme-option" data-theme-opt="lotus"><span class="swatch" style="background:#fdf1f3;border-color:#c31e4a"></span>Lotus</button>
       </div>
     </div>
     <div class="lang-toggle" role="group" aria-label="Language toggle">

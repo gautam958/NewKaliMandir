@@ -108,6 +108,54 @@ html[data-theme="sandstone"] {
   --map-filter: sepia(0.1) contrast(1.03);
 }
 
+html[data-theme="royal-purple"] {
+  --bg: #180a2e;
+  --bg-alt: #200f38;
+  --surface: #291442;
+  --surface-2: #331a52;
+  --sindoor: #b82a4e;
+  --sindoor-deep: #8f2039;
+  --gold: #c9a24b;
+  --gold-bright: #eccd80;
+  --ivory: #f2e9f5;
+  --muted: #b6a0c4;
+  --line: rgba(201, 162, 75, 0.22);
+  --on-accent: #f2e9f5;
+
+  --bg-rgb: 24, 10, 46;
+  --gold-rgb: 201, 162, 75;
+  --gold-bright-rgb: 236, 205, 128;
+
+  --texture-1: rgba(184, 42, 78, 0.16);
+  --texture-2: rgba(201, 162, 75, 0.10);
+
+  --map-filter: grayscale(0.15) sepia(0.05) contrast(1.05);
+}
+
+html[data-theme="lotus"] {
+  --bg: #fdf1f3;
+  --bg-alt: #f8e3e7;
+  --surface: #ffffff;
+  --surface-2: #fceef0;
+  --sindoor: #c31e4a;
+  --sindoor-deep: #96173a;
+  --gold: #7a5814;
+  --gold-bright: #8a6417;
+  --ivory: #341520;
+  --muted: #6b4d57;
+  --line: rgba(195, 30, 74, 0.16);
+  --on-accent: #fdf1f3;
+
+  --bg-rgb: 253, 241, 243;
+  --gold-rgb: 122, 88, 20;
+  --gold-bright-rgb: 138, 100, 23;
+
+  --texture-1: rgba(195, 30, 74, 0.06);
+  --texture-2: rgba(122, 88, 20, 0.06);
+
+  --map-filter: none;
+}
+
 :root {
   --font-display-en: "Cormorant Garamond", "Noto Serif Devanagari", serif;
   --font-display-hi: "Tiro Devanagari Hindi", "Cormorant Garamond", serif;
@@ -313,11 +361,28 @@ img { max-width: 100%; display: block; }
   content: "";
   position: absolute; inset: -60px -32px;
   z-index: -1;
+  /* Desktop: dark on the left (behind the text column), fading clear toward
+     the right so the actual photo stays vivid rather than washed out — plus
+     a light top clue of the photo before the title starts, darkening toward
+     the text band, then fading to page bg at the bottom for a clean handoff
+     into the slider strip below. */
   background-image:
-    linear-gradient(180deg, rgba(var(--bg-rgb),0.55) 0%, rgba(var(--bg-rgb),0.88) 62%, var(--bg) 100%),
+    linear-gradient(100deg, rgba(var(--bg-rgb),0.93) 0%, rgba(var(--bg-rgb),0.72) 30%, rgba(var(--bg-rgb),0.28) 55%, rgba(var(--bg-rgb),0.06) 75%),
+    linear-gradient(180deg, rgba(var(--bg-rgb),0.10) 0%, rgba(var(--bg-rgb),0.10) 60%, var(--bg) 100%),
     var(--hero-image, none);
   background-size: cover;
   background-position: center 30%;
+}
+@media (max-width: 760px) {
+  /* Mobile: text spans the full width, so there's no "clear side" to leave
+     the photo showing — use a top-to-bottom fade instead, still lighter at
+     the very top (a glimpse of the photo above the eyebrow) than in the
+     original all-over wash. */
+  .hero::before {
+    background-image:
+      linear-gradient(180deg, rgba(var(--bg-rgb),0.18) 0%, rgba(var(--bg-rgb),0.80) 24%, rgba(var(--bg-rgb),0.88) 68%, var(--bg) 100%),
+      var(--hero-image, none);
+  }
 }
 .hero .eyebrow { margin-bottom: 18px; }
 .hero h1 {
@@ -416,12 +481,19 @@ html[data-lang="hi"] .hours-card .time { font-family: var(--font-display-hi); }
   display: flex; align-items: flex-end; justify-content: center;
   background: linear-gradient(135deg, var(--surface), var(--surface-2));
   color: var(--muted); font-size: 0.75rem; text-align: center; padding: 10px;
-  background-size: cover; background-position: center;
+  overflow: hidden;
   position: relative; cursor: pointer;
   transition: transform .2s ease;
 }
+.gallery-grid .g-item img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; display: block;
+  opacity: 0; transition: opacity .35s ease;
+}
+.gallery-grid .g-item img.loaded { opacity: 1; }
 .gallery-grid .g-item:hover { transform: scale(1.02); }
 .gallery-grid .g-item .cap {
+  position: relative; z-index: 1;
   background: rgba(var(--bg-rgb), 0.72);
   color: var(--gold-bright);
   padding: 3px 9px;

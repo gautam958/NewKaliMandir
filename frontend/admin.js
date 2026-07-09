@@ -62,11 +62,24 @@
   let currentUser = null;
 
   /* ---------------- Content load / save ---------------- */
+  // See index.js for why this exists: fetch() has no built-in timeout, and a
+  // slow/unreachable backend would otherwise hang the admin panel's initial
+  // load indefinitely instead of falling back to default content promptly.
+  function fetchWithTimeout(url, options, timeoutMs) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    return fetch(url, { ...options, signal: controller.signal }).finally(() =>
+      clearTimeout(timer),
+    );
+  }
+
   async function loadDefaults() {
     try {
-      const res = await fetch("assets/default-content.json", {
-        cache: "no-store",
-      });
+      const res = await fetchWithTimeout(
+        "assets/default-content.json",
+        { cache: "no-store" },
+        4000,
+      );
       if (!res.ok) throw new Error("bad status");
       return await res.json();
     } catch (err) {
@@ -79,10 +92,17 @@
     let base = await loadDefaults();
     if (API_BASE) {
       try {
-        const res = await fetch(apiUrl("content"), { cache: "no-store" });
+        const res = await fetchWithTimeout(
+          apiUrl("content"),
+          { cache: "no-store" },
+          4000,
+        );
         if (res.ok) base = { ...base, ...(await res.json()) };
       } catch (err) {
-        console.warn("Content API unavailable, editing default content.", err);
+        console.warn(
+          "Content API unavailable or slow, editing default content.",
+          err,
+        );
       }
     }
     try {
@@ -104,14 +124,18 @@
   async function uploadImage(dataUrl, filename, contentType) {
     if (!API_BASE || !currentUser || !currentUser.idToken) return dataUrl;
     try {
-      const res = await fetch(apiUrl("media"), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${currentUser.idToken}`,
+      const res = await fetchWithTimeout(
+        apiUrl("media"),
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${currentUser.idToken}`,
+          },
+          body: JSON.stringify({ filename, contentType, dataBase64: dataUrl }),
         },
-        body: JSON.stringify({ filename, contentType, dataBase64: dataUrl }),
-      });
+        20000,
+      );
       if (!res.ok) throw new Error("upload failed");
       const data = await res.json();
       // The function returns just a filename; we build the fetchable URL
@@ -139,11 +163,11 @@
         const headers = { "Content-Type": "application/json" };
         if (currentUser && currentUser.idToken)
           headers["Authorization"] = `Bearer ${currentUser.idToken}`;
-        await fetch(apiUrl("content"), {
-          method: "POST",
-          headers,
-          body: JSON.stringify(partial),
-        });
+        await fetchWithTimeout(
+          apiUrl("content"),
+          { method: "POST", headers, body: JSON.stringify(partial) },
+          8000,
+        );
       } catch (err) {
         console.warn("Could not sync to backend, saved locally only.", err);
       }
@@ -158,7 +182,14 @@
   }
 
   /* ---------------- Theme switcher ---------------- */
-  const THEMES = ["dark", "dusk", "marigold", "sandstone"];
+  const THEMES = [
+    "dark",
+    "dusk",
+    "marigold",
+    "sandstone",
+    "royal-purple",
+    "lotus",
+  ];
   function initTheme() {
     const html = document.documentElement;
     const saved = localStorage.getItem("km_theme");
@@ -610,9 +641,13 @@
   async function fetchBackendAnalytics() {
     if (!API_BASE || !currentUser || !currentUser.idToken) return null;
     try {
-      const res = await fetch(apiUrl("analytics"), {
-        headers: { Authorization: `Bearer ${currentUser.idToken}` },
-      });
+      const res = await fetchWithTimeout(
+        apiUrl("analytics"),
+        {
+          headers: { Authorization: `Bearer ${currentUser.idToken}` },
+        },
+        6000,
+      );
       if (!res.ok) return null;
       return await res.json(); // { views: {total, byDay, byPath}, visitors: {total, newVisitors, repeatVisitors, byCountry, byState, byCity, recent} }
     } catch (err) {
