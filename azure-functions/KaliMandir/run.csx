@@ -99,9 +99,9 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
     Directory.CreateDirectory(dataDir);
     Directory.CreateDirectory(Path.Combine(dataDir, "media"));
 
-    string contentFilePath   = Path.Combine(dataDir, "content.json");
-    string analyticsFilePath = Path.Combine(dataDir, "analytics.json");
-    string visitorsFilePath  = Path.Combine(dataDir, "visitors.json");
+    string contentFilePath   = Path.Combine(dataDir, "KL_content.json");
+    string analyticsFilePath = Path.Combine(dataDir, "KL_analytics.json");
+    string visitorsFilePath  = Path.Combine(dataDir, "KL_visitors.json");
 
     if (!File.Exists(contentFilePath))   File.WriteAllText(contentFilePath,   "{}");
     if (!File.Exists(analyticsFilePath)) File.WriteAllText(analyticsFilePath, "{}");

@@ -136,6 +136,10 @@
         },
         20000,
       );
+      if (res.status === 401 || res.status === 403) {
+        handleSessionExpired();
+        return dataUrl;
+      }
       if (!res.ok) throw new Error("upload failed");
       const data = await res.json();
       // The function returns just a filename; we build the fetchable URL
@@ -163,11 +167,16 @@
         const headers = { "Content-Type": "application/json" };
         if (currentUser && currentUser.idToken)
           headers["Authorization"] = `Bearer ${currentUser.idToken}`;
-        await fetchWithTimeout(
+        const res = await fetchWithTimeout(
           apiUrl("content"),
           { method: "POST", headers, body: JSON.stringify(partial) },
           8000,
         );
+        if (res.status === 401 || res.status === 403) {
+          // The edit is already safe in localStorage above, so nothing is lost —
+          // but it hasn't reached the live site, and the admin needs to know that.
+          handleSessionExpired();
+        }
       } catch (err) {
         console.warn("Could not sync to backend, saved locally only.", err);
       }
@@ -238,6 +247,18 @@
     } catch (err) {
       return null;
     }
+  }
+
+  // Google ID tokens are short-lived (~1 hour). Checking the JWT's own `exp`
+  // claim client-side means an expired session is caught immediately on
+  // load/refresh, with no network round-trip needed — this is what makes a
+  // refresh correctly bounce back to the login screen instead of showing a
+  // half-working admin app that then fails on every save.
+  function isTokenExpired(idToken) {
+    const payload = decodeJwt(idToken);
+    if (!payload || !payload.exp) return true; // can't verify -> treat as expired, safest default
+    const bufferSeconds = 30; // small safety margin against clock skew / in-flight requests
+    return Date.now() / 1000 > payload.exp - bufferSeconds;
   }
 
   function handleCredentialResponse(response) {
@@ -313,7 +334,10 @@
     initApp();
   }
 
-  function signOut() {
+  // `message`, when given, is shown on the login screen so the person
+  // understands *why* they landed back there instead of it just looking
+  // like a random bounce back to login.
+  function signOut(message) {
     sessionStorage.removeItem("km_admin_session");
     currentUser = null;
     if (window.google && window.google.accounts) {
@@ -325,7 +349,19 @@
     }
     document.getElementById("adminApp").style.display = "none";
     document.getElementById("loginScreen").style.display = "flex";
-    document.getElementById("authError").style.display = "none";
+    if (message) {
+      showAuthError(message);
+    } else {
+      document.getElementById("authError").style.display = "none";
+    }
+  }
+
+  // Called whenever an authenticated backend call comes back 401/403 mid-
+  // session (token expired while the tab was open, admin access revoked,
+  // etc.) — not just on load. Bounces back to a real login screen rather
+  // than leaving the admin app sitting there silently failing every save.
+  function handleSessionExpired() {
+    signOut("Your session expired. Please sign in again.");
   }
 
   function restoreSession() {
@@ -333,10 +369,13 @@
       const saved = JSON.parse(
         sessionStorage.getItem("km_admin_session") || "null",
       );
-      if (saved) {
-        enterAdmin(saved);
-        return true;
+      if (!saved || !saved.idToken) return false;
+      if (isTokenExpired(saved.idToken)) {
+        sessionStorage.removeItem("km_admin_session");
+        return false;
       }
+      enterAdmin(saved);
+      return true;
     } catch (err) {
       /* ignore */
     }
@@ -648,6 +687,10 @@
         },
         6000,
       );
+      if (res.status === 401 || res.status === 403) {
+        handleSessionExpired();
+        return null;
+      }
       if (!res.ok) return null;
       return await res.json(); // { views: {total, byDay, byPath}, visitors: {total, newVisitors, repeatVisitors, byCountry, byState, byCity, recent} }
     } catch (err) {
@@ -967,7 +1010,9 @@
     initTheme();
     content = await loadContent();
     initTabs();
-    document.getElementById("signOutBtn").addEventListener("click", signOut);
+    document
+      .getElementById("signOutBtn")
+      .addEventListener("click", () => signOut());
 
     if (!restoreSession()) {
       initGoogleSignIn();

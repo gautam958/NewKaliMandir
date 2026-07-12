@@ -38,6 +38,15 @@ already pass and focus here on the code itself.
   one hung request stalls the entire page. This was a real bug that shipped
   once already; flag any new `fetch(` call in `index.js`/`admin.js` that
   doesn't go through the helper.
+- **Every authenticated admin fetch must check for 401/403 and call
+  `handleSessionExpired()`.** Google ID tokens expire in ~1 hour;
+  `restoreSession()` catches an already-expired token on load via the JWT's
+  own `exp` claim, but a token can also go stale while the tab is open. Any
+  new authenticated call (`Authorization: Bearer ...`) that doesn't check
+  `res.status === 401 || res.status === 403` will silently fail instead of
+  bouncing the admin back to a real login screen — this was a real bug that
+  shipped once already (an expired session just showed a half-broken admin
+  app forever, even across refreshes, instead of prompting re-login).
 - **`localStorage` usage is a fallback, not a database.** Flag any code that
   treats `km_content_override` or `km_analytics` as the durable source of
   truth once a real backend exists — it's per-browser and easily cleared.

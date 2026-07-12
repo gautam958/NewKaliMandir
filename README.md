@@ -193,6 +193,13 @@ works fine with the same `apiUrl()` helper.
 There is no demo/bypass login — `admin.html` only ever shows the real Google
 Sign-In button (once `KM_GOOGLE_CLIENT_ID` is set) with no fallback path.
 
+**Session expiry:** Google ID tokens last about an hour. `admin.js` checks
+the token's own `exp` claim on every load (so a refresh after it's expired
+goes straight back to the login screen, not a half-working admin app), and
+also catches a 401/403 from the backend if the token expires while the tab
+is already open — either way, the person sees a clear "Your session
+expired, please sign in again" message rather than silently-failing saves.
+
 ## Themes
 
 The site ships with six selectable color themes, switched via the small
