@@ -485,8 +485,8 @@
 <head>
   <meta charset="utf-8">
   <title>${escapeHtml(title)}</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600&display=swap">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Mukta:wght@400;600&display=swap');
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Mukta', Georgia, serif; padding: 36px 40px; color: #1a1a1a; font-size: 14px; }
     h1 { font-size: 1.35rem; color: #7a0c1e; margin-bottom: 2px; }
@@ -495,11 +495,12 @@
     th { text-align: left; padding: 7px 10px; border-bottom: 2px solid #c8203f;
          font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; color: #7a0c1e; }
     td { padding: 9px 10px; border-bottom: 1px dashed #ddd; vertical-align: top; line-height: 1.4; }
+    tr { page-break-inside: avoid; }
     tr:last-child td { border-bottom: none; }
+    .note { margin-top: 16px; padding: 10px 12px; font-size: 0.85rem; color: #555; font-style: italic; border-left: 3px solid #c9a24b; }
     .footer { margin-top: 28px; font-size: 0.75rem; color: #999; border-top: 1px solid #eee; padding-top: 10px; }
     @media print {
       body { padding: 12px 16px; }
-      .no-print { display: none !important; }
     }
   </style>
 </head>
@@ -510,11 +511,8 @@
     <thead><tr><th>#</th><th>Item / वस्तु</th><th>Qty</th></tr></thead>
     <tbody>${rows}</tbody>
   </table>
-  ${list.note_en ? `<div style="margin-top:16px;padding:10px 12px;font-size:0.85rem;color:#555;font-style:italic;border-left:3px solid #c9a24b;background:#faf6ee">${escapeHtml(lang === "hi" ? (list.note_hi || list.note_en) : list.note_en)}</div>` : ""}
+  ${list.note_en ? `<div class="note">${escapeHtml(lang === "hi" ? (list.note_hi || list.note_en) : list.note_en)}</div>` : ""}
   <div class="footer">newkalimandir.github.io &nbsp;·&nbsp; मो.: 9431777784, 9973881161</div>
-  <p class="no-print" style="margin-top:24px;text-align:center">
-    <button onclick="window.print()" style="padding:10px 28px;background:#c8203f;color:#fff;border:none;border-radius:4px;font-size:1rem;cursor:pointer">🖨 Print / Save as PDF</button>
-  </p>
 </body>
 </html>`;
 
