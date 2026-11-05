@@ -388,7 +388,8 @@
           </summary>
           ${dateHtml}
           <div class="toolbar">
-            <button type="button" data-action="download" data-list-id="${list.id}">⬇ <span lang-el="en">Download</span><span lang-el="hi">डाउनलोड</span></button>
+            <button type="button" data-action="download" data-list-id="${list.id}">⬇ <span lang-el="en">Text</span><span lang-el="hi">टेक्स्ट</span></button>
+            <button type="button" data-action="word" data-list-id="${list.id}">📄 <span lang-el="en">Word</span><span lang-el="hi">वर्ड</span></button>
             <button type="button" data-action="print" data-list-id="${list.id}">🖶 <span lang-el="en">Print</span><span lang-el="hi">प्रिंट</span></button>
           </div>
           <div class="samagri-table-wrap">
@@ -419,6 +420,7 @@
       const list = lists.find((l) => l.id === btn.dataset.listId);
       if (!list) return;
       if (btn.dataset.action === "download") downloadSamagriList(list);
+      if (btn.dataset.action === "word") downloadSamagriWord(list);
       if (btn.dataset.action === "print") printSamagriList(list);
     });
   }
@@ -460,6 +462,61 @@
       URL.revokeObjectURL(url);
       a.remove();
     }, 3000);
+  }
+
+  function downloadSamagriWord(list) {
+    const lang = document.documentElement.getAttribute("data-lang") || "en";
+    const title = lang === "hi" ? list.title_hi : list.title_en;
+    const dateStr = lang === "hi" ? (list.date_hi || "") : (list.date_en || "");
+    const noteStr = lang === "hi" ? (list.note_hi || "") : (list.note_en || "");
+
+    const rows = list.items
+      .map((it, i) => {
+        const primary = lang === "hi" ? escapeHtml(it.hi) : escapeHtml(it.en);
+        const secondary = lang === "hi" ? escapeHtml(it.en) : escapeHtml(it.hi);
+        return `<tr>
+          <td style="padding:4px 8px;border:1px solid #ccc;width:30px;text-align:center">${i + 1}</td>
+          <td style="padding:4px 8px;border:1px solid #ccc">${primary} <span style="color:#777">(${secondary})</span></td>
+          <td style="padding:4px 8px;border:1px solid #ccc;white-space:nowrap">${escapeHtml(it.qty || "—")}</td>
+        </tr>`;
+      })
+      .join("");
+
+    const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="utf-8"><title>${escapeHtml(title)}</title>
+<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml><![endif]-->
+<style>
+  body { font-family: Calibri, Arial, sans-serif; font-size: 12pt; color: #1a1a1a; margin: 2cm; }
+  h1 { font-size: 16pt; color: #7a0c1e; margin-bottom: 2pt; }
+  .sub { color: #555; font-size: 10pt; margin-bottom: 14pt; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; padding: 5px 8px; border: 1px solid #999; background: #f5f0eb; font-size: 10pt; color: #7a0c1e; }
+  .note { margin-top: 12pt; padding: 6pt 10pt; font-size: 10pt; color: #555; font-style: italic; border-left: 3pt solid #c9a24b; }
+  .footer { margin-top: 18pt; font-size: 8pt; color: #999; border-top: 1pt solid #eee; padding-top: 6pt; }
+</style></head>
+<body>
+  <h1>${escapeHtml(title)}</h1>
+  <div class="sub">New Kali Mandir, Belabagan, Deoghar · N.M Road, 814112<br>मो.: 9431777784, 9973881161${dateStr ? "<br>" + escapeHtml(dateStr) : ""}</div>
+  <table>
+    <thead><tr><th>#</th><th>${lang === "hi" ? "वस्तु / Item" : "Item / वस्तु"}</th><th>${lang === "hi" ? "मात्रा" : "Qty"}</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  ${noteStr ? `<div class="note">${escapeHtml(noteStr)}</div>` : ""}
+  <div class="footer">newkalimandir.github.io · मो.: 9431777784, 9973881161</div>
+</body></html>`;
+
+    const bom = "﻿";
+    const blob = new Blob([bom + html], { type: "application/msword;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${list.id}-puja-samagri.doc`;
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 3000);
   }
 
   function printSamagriList(list) {
