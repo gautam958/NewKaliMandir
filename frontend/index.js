@@ -99,6 +99,19 @@
         );
       }
     }
+    // One-time migration: clear stale samagriLists from localStorage so the
+    // updated default-content.json is used instead of the old cached version.
+    try {
+      if (!localStorage.getItem("km_samagri_v2")) {
+        const ov = JSON.parse(localStorage.getItem("km_content_override") || "{}");
+        if (ov.samagriLists) {
+          delete ov.samagriLists;
+          localStorage.setItem("km_content_override", JSON.stringify(ov));
+        }
+        localStorage.setItem("km_samagri_v2", "1");
+      }
+    } catch (e) { /* ignore */ }
+
     // Local admin-panel edits (used until the Azure backend is deployed / for local preview)
     try {
       const local = JSON.parse(
