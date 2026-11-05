@@ -546,6 +546,8 @@ table.samagri-table td.qty-col { color: var(--muted); white-space: nowrap; }
 table.samagri-table td.check-col { width: 30px; }
 table.samagri-table input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--sindoor); }
 table.samagri-table tr.checked td { color: var(--muted); text-decoration: line-through; }
+.samagri-date { padding: 8px 24px 12px; font-size: 0.85rem; color: var(--gold-bright); font-weight: 500; }
+.samagri-note { padding: 10px 24px 18px; font-size: 0.82rem; color: var(--muted); font-style: italic; border-top: 1px dashed var(--line); margin: 0 24px; padding-left: 0; padding-right: 0; }
 
 /* ---------- Contact ---------- */
 .contact-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 40px; }

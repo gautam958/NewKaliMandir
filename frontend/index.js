@@ -362,6 +362,9 @@
           })
           .join("");
 
+        const dateHtml = list.date_en ? `<div class="samagri-date"><span lang-el="en">${escapeHtml(list.date_en)}</span><span lang-el="hi">${escapeHtml(list.date_hi || list.date_en)}</span></div>` : "";
+        const noteHtml = list.note_en ? `<div class="samagri-note"><span lang-el="en">${escapeHtml(list.note_en)}</span><span lang-el="hi">${escapeHtml(list.note_hi || list.note_en)}</span></div>` : "";
+
         return `<details class="samagri-card" ${li === 0 ? "open" : ""} data-list-id="${list.id}">
           <summary>
             <span class="s-left">
@@ -370,6 +373,7 @@
             </span>
             <span class="chev">&#10095;</span>
           </summary>
+          ${dateHtml}
           <div class="toolbar">
             <button type="button" data-action="download" data-list-id="${list.id}">⬇ <span lang-el="en">Download</span><span lang-el="hi">डाउनलोड</span></button>
             <button type="button" data-action="print" data-list-id="${list.id}">🖶 <span lang-el="en">Print</span><span lang-el="hi">प्रिंट</span></button>
@@ -384,6 +388,7 @@
               <tbody>${rows}</tbody>
             </table>
           </div>
+          ${noteHtml}
         </details>`;
       })
       .join("");
@@ -408,9 +413,12 @@
   function downloadSamagriList(list) {
     const lang = document.documentElement.getAttribute("data-lang") || "en";
     const title = lang === "hi" ? list.title_hi : list.title_en;
+    const dateStr = lang === "hi" ? (list.date_hi || "") : (list.date_en || "");
+    const noteStr = lang === "hi" ? (list.note_hi || "") : (list.note_en || "");
     const lines = [
       title,
       "New Kali Mandir, Belabagan, Deoghar",
+      ...(dateStr ? [dateStr] : []),
       "",
       ...list.items.map((it, i) => {
         const name =
@@ -418,6 +426,7 @@
         const qty = it.qty ? ` — ${it.qty}` : "";
         return `${i + 1}. ${name}${qty}`;
       }),
+      ...(noteStr ? ["", noteStr] : []),
     ];
 
     // Use a BOM so apps like Excel / Notepad recognise UTF-8 (important for Hindi text).
@@ -483,11 +492,12 @@
 </head>
 <body>
   <h1>${escapeHtml(title)}</h1>
-  <div class="sub">New Kali Mandir, Belabagan, Deoghar &nbsp;·&nbsp; N.M Road, 814112</div>
+  <div class="sub">New Kali Mandir, Belabagan, Deoghar &nbsp;·&nbsp; N.M Road, 814112${list.date_en ? `<br>${escapeHtml(lang === "hi" ? (list.date_hi || list.date_en) : list.date_en)}` : ""}</div>
   <table>
     <thead><tr><th>#</th><th>Item / वस्तु</th><th>Qty</th></tr></thead>
     <tbody>${rows}</tbody>
   </table>
+  ${list.note_en ? `<div style="margin-top:16px;padding:10px 12px;font-size:0.85rem;color:#555;font-style:italic;border-left:3px solid #c9a24b;background:#faf6ee">${escapeHtml(lang === "hi" ? (list.note_hi || list.note_en) : list.note_en)}</div>` : ""}
   <div class="footer">newkalimandir.github.io &nbsp;·&nbsp; +91-9431777784</div>
   <p class="no-print" style="margin-top:24px;text-align:center">
     <button onclick="window.print()" style="padding:10px 28px;background:#c8203f;color:#fff;border:none;border-radius:4px;font-size:1rem;cursor:pointer">🖨 Print / Save as PDF</button>
