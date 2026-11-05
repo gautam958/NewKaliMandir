@@ -468,14 +468,12 @@
 
     const rows = list.items
       .map((it, i) => {
-        const name =
-          lang === "hi"
-            ? `${escapeHtml(it.hi)}<br><span style="color:#666;font-size:0.88em;">${escapeHtml(it.en)}</span>`
-            : `${escapeHtml(it.en)}<br><span style="color:#666;font-size:0.88em;">${escapeHtml(it.hi)}</span>`;
+        const primary = lang === "hi" ? escapeHtml(it.hi) : escapeHtml(it.en);
+        const secondary = lang === "hi" ? escapeHtml(it.en) : escapeHtml(it.hi);
         return `<tr>
-          <td style="width:28px">${i + 1}</td>
-          <td>${name}</td>
-          <td style="white-space:nowrap;color:#555">${escapeHtml(it.qty || "")}</td>
+          <td>${i + 1}</td>
+          <td>${primary} <span class="alt">(${secondary})</span></td>
+          <td class="qty">${escapeHtml(it.qty || "")}</td>
         </tr>`;
       })
       .join("");
@@ -487,17 +485,19 @@
   <title>${escapeHtml(title)}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, 'Segoe UI', Roboto, 'Noto Sans Devanagari', sans-serif; padding: 36px 40px; color: #1a1a1a; font-size: 14px; }
-    h1 { font-size: 1.35rem; color: #7a0c1e; margin-bottom: 2px; }
-    .sub { color: #555; font-size: 0.85rem; margin-bottom: 24px; }
+    body { font-family: -apple-system, 'Segoe UI', Roboto, 'Noto Sans Devanagari', sans-serif; padding: 24px 32px; color: #1a1a1a; font-size: 13px; }
+    h1 { font-size: 1.2rem; color: #7a0c1e; margin-bottom: 2px; }
+    .sub { color: #555; font-size: 0.82rem; margin-bottom: 16px; }
     table { width: 100%; border-collapse: collapse; }
-    th { text-align: left; padding: 7px 10px; border-bottom: 2px solid #c8203f;
-         font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; color: #7a0c1e; }
-    td { padding: 9px 10px; border-bottom: 1px dashed #ddd; vertical-align: top; line-height: 1.4; }
-    tr { page-break-inside: avoid; }
+    th { text-align: left; padding: 5px 8px; border-bottom: 2px solid #c8203f;
+         font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; color: #7a0c1e; }
+    td { padding: 5px 8px; border-bottom: 1px dashed #ddd; vertical-align: top; line-height: 1.35; }
+    td:first-child { width: 24px; color: #888; }
+    .alt { color: #888; font-size: 0.85em; }
+    .qty { white-space: nowrap; color: #555; }
     tr:last-child td { border-bottom: none; }
-    .note { margin-top: 16px; padding: 10px 12px; font-size: 0.85rem; color: #555; font-style: italic; border-left: 3px solid #c9a24b; }
-    .footer { margin-top: 28px; font-size: 0.75rem; color: #999; border-top: 1px solid #eee; padding-top: 10px; }
+    .note { margin-top: 12px; padding: 8px 10px; font-size: 0.82rem; color: #555; font-style: italic; border-left: 3px solid #c9a24b; }
+    .footer { margin-top: 16px; font-size: 0.72rem; color: #999; border-top: 1px solid #eee; padding-top: 8px; }
     @media print {
       body { padding: 12px 16px; }
     }
