@@ -485,10 +485,9 @@
 <head>
   <meta charset="utf-8">
   <title>${escapeHtml(title)}</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600&display=swap">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Mukta', Georgia, serif; padding: 36px 40px; color: #1a1a1a; font-size: 14px; }
+    body { font-family: -apple-system, 'Segoe UI', Roboto, 'Noto Sans Devanagari', sans-serif; padding: 36px 40px; color: #1a1a1a; font-size: 14px; }
     h1 { font-size: 1.35rem; color: #7a0c1e; margin-bottom: 2px; }
     .sub { color: #555; font-size: 0.85rem; margin-bottom: 24px; }
     table { width: 100%; border-collapse: collapse; }
