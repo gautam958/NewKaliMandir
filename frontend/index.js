@@ -505,13 +505,13 @@
 </head>
 <body>
   <h1>${escapeHtml(title)}</h1>
-  <div class="sub">New Kali Mandir, Belabagan, Deoghar &nbsp;·&nbsp; N.M Road, 814112${list.date_en ? `<br>${escapeHtml(lang === "hi" ? (list.date_hi || list.date_en) : list.date_en)}` : ""}</div>
+  <div class="sub">New Kali Mandir, Belabagan, Deoghar &nbsp;·&nbsp; N.M Road, 814112<br>मो.: 9431777784, 9973881161${list.date_en ? `<br>${escapeHtml(lang === "hi" ? (list.date_hi || list.date_en) : list.date_en)}` : ""}</div>
   <table>
     <thead><tr><th>#</th><th>Item / वस्तु</th><th>Qty</th></tr></thead>
     <tbody>${rows}</tbody>
   </table>
   ${list.note_en ? `<div style="margin-top:16px;padding:10px 12px;font-size:0.85rem;color:#555;font-style:italic;border-left:3px solid #c9a24b;background:#faf6ee">${escapeHtml(lang === "hi" ? (list.note_hi || list.note_en) : list.note_en)}</div>` : ""}
-  <div class="footer">newkalimandir.github.io &nbsp;·&nbsp; +91-9431777784</div>
+  <div class="footer">newkalimandir.github.io &nbsp;·&nbsp; मो.: 9431777784, 9973881161</div>
   <p class="no-print" style="margin-top:24px;text-align:center">
     <button onclick="window.print()" style="padding:10px 28px;background:#c8203f;color:#fff;border:none;border-radius:4px;font-size:1rem;cursor:pointer">🖨 Print / Save as PDF</button>
   </p>
